@@ -10,12 +10,12 @@ We are a team of students and developers from [HEIG-VD](https://heig-vd.ch/) (Ha
 
 | Name | Role |
 |------|------|
-| **Zmoos Leo** | Team Member |
-| **Ferrari Teo** | Team Member |
-| **Izadmehr Yasaman** | Team Member |
-| **Walther Simon** | Team Member |
-| **Egger Magali** | Team Member |
-| **Fleurimont Clarisse Estelle** | Team Member |
+| **Egger Magali** | Data Processing |
+| **Ferrari Téo** | Sonification |
+| **Fleurimont Clarisse Estelle** | Frontend, DevOps & Deployment |
+| **Izadmehr Yasaman** | Data Processing |
+| **Walther Simon** | Data Processing |
+| **Zmoos Léo** | Sonification |
 
 ---
 
