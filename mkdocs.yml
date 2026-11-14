@@ -40,30 +40,21 @@ nav:
     - Quick Start: getting-started/quickstart.md
     - Prerequisites: getting-started/prerequisites.md
     - Development Setup: getting-started/development.md
-  - Architecture:
-    - Overview: architecture/overview.md
-    - Frontend: architecture/frontend.md
-    - Backend: architecture/backend.md
-    - Sonification: architecture/sonification.md
-    - Deployment: architecture/deployment.md
+  - Development:
+    - Overview: development/overview.md
+    - Frontend: development/frontend.md
+    - Backend: development/backend.md
+    - Sonification: development/sonification.md
+    - Testing: development/testing.md
+    - Contributing: development/contributing.md
   - User Guide:
     - Using the App: user-guide/using-the-app.md
     - Accessibility: user-guide/accessibility.md
-  - Developer Guide:
-    - Frontend: developer-guide/frontend.md
-    - Backend: developer-guide/backend.md
-    - Sonification: developer-guide/sonification.md
-    - Testing: developer-guide/testing.md
-    - Contributing: developer-guide/contributing.md
   - API Reference: api/reference.md
   - Deployment:
     - Docker: deployment/docker.md
     - Production: deployment/production.md
     - CI/CD: deployment/ci-cd.md
-  - Data:
-    - Sources: data/sources.md
-    - Formats: data/formats.md
-    - Processing: data/processing.md
   - Appendix:
     - Glossary: appendix/glossary.md
     - FAQ: appendix/faq.md
