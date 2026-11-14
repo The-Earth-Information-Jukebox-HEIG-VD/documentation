@@ -15,7 +15,7 @@ These visualizations are powerful tools for understanding climate change. But th
 
 ### 285 Million People Excluded
 
-According to the World Health Organization:
+According to the World Health Organization (2010 global estimate):
 
 - **285 million** people worldwide are visually impaired
 - **39 million** are blind
@@ -58,11 +58,12 @@ We assign each climate variable to an orchestral instrument:
 |----------|------------|------------------|
 | **Temperature** | Piano (chords) | Foundation of climate, foundation of harmony |
 | **CO2** | Contrabass | Deep, underlying presence like greenhouse gases |
-| **Precipitation** | Violins | Flowing, expressive like rainfall |
-| **Dust** | Flute | Light, airborne particles |
-| **Smoke** | French Horns | Full, enveloping presence |
+| **Rain** | Violins | Flowing, expressive like rainfall |
+| **Snow** | Glockenspiel | Crystalline, delicate |
 | **Lightning** | Xylophone | Sharp, percussive strikes |
-| **Snowfall** | Glockenspiel | Crystalline, delicate |
+| **Night lights** | Harp | One held note per year, like the slow glow of cities |
+
+Flute (dust) and French Horns (smoke) voices also exist in the composition engine, but no data is served for them yet.
 
 ---
 
@@ -73,35 +74,35 @@ We assign each climate variable to an orchestral instrument:
 Every feature is designed with accessibility in mind:
 
 - Full keyboard navigation
-- Screen reader compatibility
-- WCAG 2.1 AA compliance
-- Audio transcripts explaining the data
+- Screen reader compatibility (live announcements of the value being played)
+- WCAG 2.1 AA as the target
+- A list view as an alternative to the globe for zone selection
 
 ### 2. Scientific Accuracy
 
 The sonification accurately represents the data:
 
-- Linear mapping preserves proportions
-- Each data point corresponds to a note
-- Time progresses consistently
-- Values are normalized consistently
+- Real NASA data, averaged over the selected zone
+- One bar of music per month of data
+- Each instrument is scaled on the whole series of the zone, so the same value always gives the same note
+- Datasets are lined up by date; an instrument is silent where it has no data
 
 ### 3. User Control
 
 Users have full control over the experience:
 
-- Play, pause, seek
-- Select regions and time periods
-- Adjust volume
-- Download audio
+- Play, pause, seek, jump to key climate moments
+- Select a zone (continent, country, ocean or sea)
+- Choose which instrument tracks to hear
+- Adjust the overall volume
 
 ### 4. Educational Value
 
 The experience teaches about climate:
 
-- Audio transcripts explain what values mean
-- Tooltips provide context
-- Data tables are available for screen readers
+- An About page explains the mapping between data and sound
+- Info tooltips provide context
+- Key climate moments link historical events to the timeline
 
 ---
 
@@ -135,4 +136,4 @@ Climate data accessibility is just the beginning. If you're interested in:
 - Applying sonification to other datasets
 - Improving accessibility features
 
-Check out our [Contributing Guide](../developer-guide/contributing.md) and join us on [GitHub](https://github.com/The-Earth-Information-Jukebox-HEIG-VD).
+Check out our [Contributing Guide](../development/contributing.md) and join us on [GitHub](https://github.com/The-Earth-Information-Jukebox-HEIG-VD).

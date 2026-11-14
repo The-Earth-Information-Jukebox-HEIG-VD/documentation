@@ -19,7 +19,7 @@ Earth Information Jukebox is a project that transforms NASA climate data into mu
 
 ### Is this a real NASA project?
 
-This project was created for the NASA Space Apps Challenge 2026 hackathon. It uses real NASA data (GISTEMP, POWER API) but is developed by an independent team from HEIG-VD.
+This project was created for the NASA Space Apps Challenge 2026 hackathon. It uses real NASA data (GISTEMP temperature anomalies, GPM IMERG rain and snow, ISS LIS lightning, Earth at Night lights) but is developed by an independent team from HEIG-VD.
 
 ---
 
@@ -27,32 +27,35 @@ This project was created for the NASA Space Apps Challenge 2026 hackathon. It us
 
 ### Why can't I hear anything?
 
-1. **Browser autoplay policy**: Click somewhere on the page first, then try playing
-2. **System volume**: Check your volume settings
-3. **Browser support**: Use Chrome or Firefox for best results
-4. **Headphones**: Ensure headphones are connected if you're using them
+1. **No zone selected**: Play stays disabled until you pick a zone on the globe or in the list view
+2. **No track enabled**: Open "Audio tracks" and enable at least one instrument
+3. **Backend unavailable**: All audio is composed by the sonification backend. If it is not running, the player shows a "backend unavailable" error and there is no sound (no offline fallback)
+4. **Data still loading**: Right after the backend starts, it prepares its datasets for a few minutes; tracks show as preparing until then
+5. **No data for the period**: Each instrument is silent for months its dataset does not cover (e.g. lightning only exists for 2017-2023)
+6. **System volume / headphones**: Check your volume settings and output device
 
 ### How do I select a region?
 
-1. Use the dropdown to select a preset zone (Global, Switzerland, France, etc.)
-2. Or click/drag on the map to select a custom area
-3. Or enter latitude/longitude coordinates manually
+1. Choose the zone type: continents, countries, or oceans & seas
+2. Click a zone on the 3D globe
+3. Or switch to the list view and select a zone with the keyboard (Enter to select, arrow keys to expand/collapse groups)
 
 ### What do the different instruments mean?
 
-| Instrument | Represents |
-|------------|------------|
-| Piano | Temperature |
-| Contrabass | CO2 |
-| Violins | Precipitation |
-| Flute | Dust |
-| French Horns | Smoke |
-| Xylophone | Lightning |
-| Glockenspiel | Snowfall |
+| Instrument | Represents | Data available |
+|------------|------------|----------------|
+| Piano (chords) | Temperature anomaly | 1880-2025 |
+| Contrabass | CO2 | 2002-2022 |
+| Violins | Rain | 2000-2026 |
+| Glockenspiel | Snow | 2000-2026 |
+| Xylophone | Lightning | 2017-2023 |
+| Harp | Night lights (one value per year) | 2012-2023 |
+
+The list shown in the app comes from the backend (`GET /api/instruments`).
 
 ### Can I download the music?
 
-Yes! After playback, click the Download button to save as MP3, WAV, or MIDI.
+Not from the webapp. The deployed backend only serves the webapp's endpoints. Developers can enable the engine's full API (`JUKEBOX_FULL_API=1`), whose `POST /api/compose` returns MIDI, per-instrument MIDI stems and rendered MP3/WAV files.
 
 ---
 
@@ -65,23 +68,29 @@ Yes! After playback, click the Download button to save as MP3, WAV, or MIDI.
 - Safari
 - Edge
 
-All modern browsers with Web Audio API support.
+All modern browsers with Web Audio API and WebGL support (WebGL is needed for the 3D globe; the list view works without it).
 
 ### Does it work on mobile?
 
-Yes, but desktop provides a better experience for exploring the data. The touch interface is fully functional.
+It runs in mobile browsers, but desktop provides a better experience for exploring the globe.
+
+!!! note
+    The mobile experience has not been formally tested.
 
 ### How accurate is the data?
 
-We use official NASA data sources:
-- GISTEMP for global temperatures (updated monthly)
-- POWER API for regional climate data (updated daily)
+We use NASA data sources, put on one common 0.25° grid by the team:
+- GISTEMP v4 for temperature anomalies (2° grid)
+- GPM IMERG for rain and snow
+- ISS LIS (via NASA SVS) for lightning
+- Earth at Night (NASA SVS) for night lights
+- CO2 maps extracted by the team (outline pixels of the source picture are removed by the backend)
 
-The sonification accurately represents the data values.
+Each instrument plays the mean of its dataset over the selected zone, one bar per month.
 
 ### Can I use this offline?
 
-Not currently. The app requires an internet connection to fetch data from the backend server.
+No. All audio is composed by the sonification backend; there is no in-browser fallback. Without the backend, the app shows a "backend unavailable" error. A local Docker Compose deployment runs entirely on your machine.
 
 ---
 
@@ -92,26 +101,25 @@ Not currently. The app requires an internet connection to fetch data from the ba
 Yes! The app is designed with accessibility as a core feature:
 - Full keyboard navigation
 - Screen reader support (VoiceOver, NVDA, JAWS)
-- ARIA labels and live regions
-- Audio transcript with data tables
+- ARIA labels and live regions (the value being played is announced, e.g. "+1.2 °C vs normal")
+- A list view as an alternative to the 3D globe
 
 ### What keyboard shortcuts are available?
 
 | Key | Action |
 |-----|--------|
 | Space | Play/Pause |
-| ← → | Seek |
+| ← → | Seek backward/forward |
 | Home/End | Jump to start/end |
-| ↑ ↓ | Volume |
-| M | Mute |
-| ? | Show shortcuts |
+| M | Mute/unmute |
+| Esc | Close panels and dialogs |
 
 ### Is there a text alternative to the audio?
 
-Yes! Click "Audio Transcript" to see:
-- Explanation of the sonification
-- Complete data table
-- Frequency mapping
+Partly. The About page explains how data maps to sound, and the live region announces the current value of the main track while playing.
+
+!!! note
+    An `AudioTranscript` component (explanation and data table) exists in the webapp code but is not currently shown in the interface.
 
 ---
 
@@ -119,19 +127,23 @@ Yes! Click "Audio Transcript" to see:
 
 ### What technology stack is used?
 
-- **Frontend**: React, TypeScript, Web Audio API, Vite
+- **Frontend**: React, TypeScript, Vite, react-globe.gl (three.js), i18next, Web Audio API (playback of MP3 chunks)
 - **Backend**: FastAPI, Python, NumPy
-- **Audio**: MIDI, SoundFont, VSCO samples
-- **Deployment**: Docker, GitHub Actions
+- **Audio**: MIDI, VSCO 2 CE samples, GeneralUser GS SoundFont, MP3
+- **Deployment**: Docker, Docker Compose
 
 ### How do I run it locally?
 
 ```bash
-# Quick start with Docker
-git clone https://github.com/The-Earth-Information-Jukebox-HEIG-VD/deployment.git
+# Quick start with Docker: clone the repositories side by side
+# (webapp, sonification, datasets, deployment), then build locally
 cd deployment
-docker compose up
+cp .env.example .env   # make sure VITE_API_URL=/api is set
+./scripts/run-local.sh
 ```
+
+!!! note
+    The pre-built GHCR images are not published yet, so a plain `docker compose up` cannot pull them; build the images locally as above.
 
 See the [Quick Start](../getting-started/quickstart.md) guide.
 
@@ -142,7 +154,7 @@ See the [Quick Start](../getting-started/quickstart.md) guide.
 3. Make your changes
 4. Submit a pull request
 
-See the [Contributing Guide](../developer-guide/contributing.md).
+See the [Contributing Guide](../development/contributing.md).
 
 ### Where can I report bugs?
 
@@ -154,11 +166,9 @@ Open an issue on the [GitHub repository](https://github.com/The-Earth-Informatio
 
 ### How is temperature mapped to pitch?
 
-Linear mapping from data range to frequency range:
-- Minimum value → 220 Hz (A3)
-- Maximum value → 880 Hz (A5)
+The backend maps each value to a MIDI note within the instrument's pitch range (piano chords: notes 48-72, C3 to C5), snapped to the musical scale. The range is scaled on the whole series of the selected zone, so the highest anomaly of the zone gives the highest chord and the same value always gives the same note, across chunks.
 
-Example: +1.5°C anomaly (near max) → ~800 Hz (high pitch)
+In the default data-faithful style, a triangle marks unusually hot months and a woodblock unusually cold ones.
 
 ### Why use music instead of simple tones?
 
@@ -169,7 +179,7 @@ Example: +1.5°C anomaly (near max) → ~800 Hz (high pitch)
 
 ### Can I customize the sonification?
 
-Yes, through the API you can adjust:
+In the webapp you choose the zone, the instrument tracks and the start date. The engine's own `POST /api/compose` endpoint (development only, `JUKEBOX_FULL_API=1`) can also adjust:
 - Musical key (C, D, etc.)
 - Scale (major, minor, pentatonic)
 - Tempo (BPM)
@@ -177,7 +187,7 @@ Yes, through the API you can adjust:
 
 ### What's the difference between "data" and "musical" style?
 
-- **Data style**: Every note directly represents data. No embellishment.
+- **Data style** (default, used by the webapp): Every note directly represents data. No embellishment.
 - **Musical style**: Adds intro, climax, chord progressions, and orchestration for a more musical experience.
 
 ---
@@ -186,19 +196,24 @@ Yes, through the API you can adjust:
 
 ### How current is the data?
 
-| Source | Update Frequency | Typical Lag |
-|--------|------------------|-------------|
-| GISTEMP | Monthly | ~2 months |
-| POWER | Daily | ~1 day |
+The data is a snapshot stored in the `datasets` repository; it is not updated live. New months are added by re-running the `data_processing` scripts.
 
 ### What time periods are available?
 
-- **GISTEMP**: 1880 to present (monthly)
-- **POWER**: Varies by location (typically 1981-present)
+| Dataset | Period | Time step |
+|---------|--------|-----------|
+| Temperature anomaly (GISTEMP) | 1880-01 → 2025-12 | Monthly |
+| Rain (GPM IMERG) | 2000-06 → 2026-11 | Monthly |
+| Snow (GPM IMERG) | 2000-06 → 2026-11 | Monthly |
+| CO2 | 2002-09 → 2022-03 | Monthly |
+| Lightning (ISS LIS) | 2017-03 → 2023-07 | Monthly, 55°S-55°N only |
+| Night lights (Earth at Night) | 2012 → 2023 | Yearly |
+
+A wildfire dataset (MODIS, 2002-07 → 2026-11) is in the `datasets` repository but is not sonified yet.
 
 ### Can I use my own data?
 
-The API accepts custom data through the cells/positions parameters. Full custom dataset upload is planned for a future version.
+Not through the app. You can send any set of points (latitude/longitude) to `POST /api/sonify`. To add a dataset, put a folder of monthly 720×1440 `.npy` files in the `datasets` repository and add a recipe to `backend/prepare_data.py` in the sonification repository.
 
 ---
 
@@ -211,21 +226,26 @@ The world's largest annual global hackathon, organized by NASA. Teams around the
 ### Who built this?
 
 A team from HEIG-VD (Switzerland):
-- Zmoos Leo
-- Ferrari Teo
+- Egger Magali
+- Ferrari Téo
+- Fleurimont Clarisse Estelle
 - Izadmehr Yasaman
 - Walther Simon
-- Egger Magali
-- Fleurimont Clarisse Estelle
+- Zmoos Léo
+
+See the [Team](../about/team.md) page.
 
 ### Is this open source?
 
-Yes! All code is available on [GitHub](https://github.com/The-Earth-Information-Jukebox-HEIG-VD).
+The code is hosted in the [The-Earth-Information-Jukebox-HEIG-VD](https://github.com/The-Earth-Information-Jukebox-HEIG-VD) GitHub organization.
+
+!!! note
+    At the time of writing, the code repositories are private and have no license file; only the documentation repository is public.
 
 ---
 
 ## Still Have Questions?
 
-- Open a [GitHub Discussion](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/webapp/discussions)
+- Open a [GitHub Issue](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/webapp/issues)
 - Check the full [Documentation](../index.md)
 - Read the [API Reference](../api/reference.md)

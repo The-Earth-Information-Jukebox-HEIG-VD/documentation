@@ -1,236 +1,272 @@
 # Docker Deployment
 
-Deploy Earth Information Jukebox using Docker Compose.
+Deploy Earth Information Jukebox using Docker Compose. Everything lives in the
+[`deployment`](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/deployment) repository.
 
 ---
 
 ## Prerequisites
 
-- Docker 24.x or later
-- Docker Compose 2.x or later
-- 2GB RAM minimum
-- 5GB disk space
+- Docker with the Compose v2 plugin (`docker compose`, not `docker-compose`)
+- The sibling repositories checked out next to `deployment/` (for the local build, see below)
+- About 2 GB RAM for the backend (the production override caps it at 2 GB)
+- Disk space: the raw datasets are ~6.3 GB (`datasets/data`), the backend image ~1 GB, plus the converted datasets in the cache volume
+
+!!! warning "No images are published yet"
+    `docker-compose.yml` pulls `ghcr.io/the-earth-information-jukebox-heig-vd/{datasets,sonification,webapp}:${TAG:-latest}`,
+    but **no image has been pushed to GHCR so far**: the publish workflows only run on `v*` tags and no tag exists yet
+    (see [CI/CD](ci-cd.md#releasing-images)). Until a release is cut, a plain `docker compose up` fails at the pull step.
+    Use the **local build** below.
 
 ---
 
-## Quick Start
+## Quick Start (local build)
+
+The working path today: build the images from the sibling repositories and mount the datasets checkout directly.
 
 ```bash
-# Clone deployment repository
-git clone https://github.com/The-Earth-Information-Jukebox-HEIG-VD/deployment.git
+# All repositories side by side
+git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/webapp.git
+git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/sonification.git
+git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/datasets.git
+git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/deployment.git
 cd deployment
 
-# Start all services
-docker compose up -d
+# Build + start, waits until the services are healthy
+./scripts/run-local.sh            # same as: ./scripts/run-local.sh up
 
-# View logs
-docker compose logs -f
+./scripts/run-local.sh logs       # follow the logs
+./scripts/run-local.sh rebuild    # rebuild without cache, then restart
+./scripts/run-local.sh down       # stop
+```
 
-# Stop services
-docker compose down
+`run-local.sh` checks that `../webapp`, `../sonification` and `../datasets/data` exist, copies `.env.example`
+to `.env` if needed, and runs:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build --wait
 ```
 
 Services:
-- Frontend: http://localhost:5173
-- Backend: http://localhost:8000
-- API Docs: http://localhost:8000/docs
+
+- Webapp: http://localhost (`WEBAPP_PORT`, default 80)
+- Backend API: http://localhost:8000 (`BACKEND_PORT`, default 8000)
+- API health: http://localhost:8000/api/health
+- API docs: http://localhost:8000/docs (lists only the frontend's calls, see [`JUKEBOX_FULL_API`](#backend-container))
+
+!!! info "First start"
+    On the first start the backend converts the raw datasets into its cache volume, in the background. The API
+    answers at once, but `GET /api/health` reports `"preparing_data": true` until the conversion is done (a few
+    minutes). Later starts only rebuild what changed.
 
 ---
 
-## Docker Compose Configuration
+## Docker Compose Files
 
-### Development Configuration
+| File | Loaded | Purpose |
+|------|--------|---------|
+| `docker-compose.yml` | always | Base stack: `data-init` → `backend` → `webapp`, images from GHCR, volumes `jukebox-data` and `jukebox-cache`, network `jukebox-net` |
+| `docker-compose.override.yml` | automatically with plain `docker compose` | Development tweaks (`JUKEBOX_CORS=*`, commented-out local data mount and debug port) |
+| `docker-compose.local.yml` | `-f docker-compose.yml -f docker-compose.local.yml` | Build images from `../webapp` and `../sonification`, bind-mount `../datasets/data`, disable `data-init` |
+| `docker-compose.prod.yml` | `-f docker-compose.yml -f docker-compose.prod.yml` | Restricted CORS, CPU/memory limits, JSON log rotation |
 
-```yaml
-# docker-compose.yml
-version: '3.8'
+!!! note
+    The compose files still carry a top-level `version: "3.9"` key. Compose v2 ignores it and prints an
+    "obsolete" warning; it is harmless.
 
-services:
-  frontend:
-    build:
-      context: ../webapp
-      dockerfile: Dockerfile
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    volumes:
-      - ../webapp/src:/app/src
-    depends_on:
-      - backend
-
-  backend:
-    build:
-      context: ../sonification
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      - JUKEBOX_DATA_DIR=/data
-      - JUKEBOX_CACHE_DIR=/cache
-      - JUKEBOX_CORS=*
-    volumes:
-      - data:/data
-      - cache:/cache
-
-volumes:
-  data:
-  cache:
-```
-
-### Production Configuration
+### Base stack (`docker-compose.yml`)
 
 ```yaml
-# docker-compose.prod.yml
-version: '3.8'
-
 services:
-  frontend:
-    build:
-      context: ../webapp
-      dockerfile: Dockerfile.prod
-    restart: unless-stopped
-
-  backend:
-    build:
-      context: ../sonification
-      dockerfile: Dockerfile.prod
-    restart: unless-stopped
+  data-init:     # ghcr.io/.../datasets:${DATA_TAG:-latest}
+    # copies /datasets/. into the jukebox-data volume once (marker file /data/.initialized), then exits
+  backend:       # ghcr.io/.../sonification:${TAG:-latest}
+    ports: ["${BACKEND_PORT:-8000}:8000"]
     environment:
-      - JUKEBOX_CORS=https://your-domain.com
+      - JUKEBOX_DATA_DIR=/app/data
+      - JUKEBOX_CACHE_DIR=/app/cache
+      - JUKEBOX_CORS=${JUKEBOX_CORS:-*}
     volumes:
-      - data:/data
-      - cache:/cache
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
+      - jukebox-data:/app/data:ro
+      - jukebox-cache:/app/cache
+    depends_on: data-init (completed successfully)
+    healthcheck: curl -f http://localhost:8000/api/health
+  webapp:        # ghcr.io/.../webapp:${TAG:-latest}
+    ports: ["${WEBAPP_PORT:-80}:80"]
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./certs:/etc/nginx/certs:ro
-    depends_on:
-      - frontend
-      - backend
-    restart: unless-stopped
-
-volumes:
-  data:
-  cache:
+      - jukebox-data:/usr/share/nginx/data:ro   # served at /data/ for the globe
+    depends_on: data-init (completed), backend (healthy)
+    healthcheck: wget --spider http://localhost/health
 ```
+
+(Abridged; see the file for the full definition.)
+
+### Local build (`docker-compose.local.yml`)
+
+- `data-init` is moved to the `registry` profile, so it does not run (the data comes from the bind mount).
+- `backend` is built from `../sonification` as `earth-jukebox/sonification:local`; `webapp` from `../webapp`
+  as `earth-jukebox/webapp:local` with `VITE_API_URL=/api`.
+- Both mount `../datasets/data` read-only (`/app/data` and `/usr/share/nginx/data`) instead of copying ~6 GB into a volume.
+- The backend health check gets a 60 s `start_period` for the first data conversion.
+
+To also bundle the VSCO orchestral samples (~440 MB, slower build), uncomment the `WITH_VSCO: "1"` build arg in
+`docker-compose.local.yml`.
+
+### Production overrides (`docker-compose.prod.yml`)
+
+See [Production Deployment](production.md).
+
+---
+
+## How the Containers Work
+
+```
+browser ──:80──▶ webapp (nginx)
+                  ├── /          React SPA (SPA fallback to index.html)
+                  ├── /api/*  ──▶ backend:8000/api/*   (proxy, 120 s read timeout)
+                  ├── /data/*     jukebox-data, read-only (JSON listings + HTTP Range on .npy)
+                  └── /health     "healthy" (container health check)
+
+backend (FastAPI, python backend/serve.py)
+  ├── reads the raw datasets from /app/data (read-only)
+  ├── converts them in the background into /app/cache/_datasets
+  └── serves /api/health, /api/instruments, /api/sonify, /api/zones/zone-data
+```
+
+- **webapp image** (`webapp/Dockerfile`): `node:22-alpine` build stage (`npm ci && npm run build`, build arg
+  `VITE_API_URL`, default `/api`), served by `nginx:alpine` with `webapp/nginx.conf`.
+- **sonification image** (`sonification/Dockerfile`): `python:3.12-slim`, multi-stage. Includes `ffmpeg` (MP3),
+  `tinysoundfont` and the GeneralUser GS SoundFont (downloaded at build time); VSCO samples only with
+  `--build-arg WITH_VSCO=1`.
+- **datasets image** (`datasets/Dockerfile`): `alpine` with the contents of `data/` in `/datasets`, used only as
+  an init container.
 
 ---
 
 ## Building Images
 
-### Build All Services
+### Through Compose (local build)
 
 ```bash
-docker compose build
+docker compose -f docker-compose.yml -f docker-compose.local.yml build
+docker compose -f docker-compose.yml -f docker-compose.local.yml build backend
+docker compose -f docker-compose.yml -f docker-compose.local.yml build --no-cache
 ```
 
-### Build Specific Service
+### Individually
 
 ```bash
-docker compose build backend
-docker compose build frontend
+docker build -t earth-jukebox-webapp ../webapp                    # --build-arg VITE_API_URL=/api
+docker build -t earth-jukebox-sonification ../sonification        # --build-arg WITH_VSCO=1 for orchestral samples
+docker build -t earth-jukebox-datasets ../datasets                # copies datasets/data into the image
 ```
 
-### Build with No Cache
+Run the backend alone:
 
 ```bash
-docker compose build --no-cache
+docker run -p 8000:8000 \
+  -v "$PWD/../datasets/data:/app/data:ro" \
+  -v jukebox-cache:/app/cache \
+  earth-jukebox-sonification
 ```
 
 ---
 
 ## Environment Variables
 
-### Backend
+### Compose (`.env`, from `.env.example`)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `JUKEBOX_DATA_DIR` | `/data` | Climate data directory |
-| `JUKEBOX_CACHE_DIR` | `/cache` | Cache directory |
+| `TAG` | `latest` | Image tag for `webapp` and `sonification` (registry flow) |
+| `DATA_TAG` | `latest` | Image tag for `datasets` (registry flow) |
+| `WEBAPP_PORT` | `80` | Host port of the webapp |
+| `BACKEND_PORT` | `8000` | Host port of the backend API |
+| `JUKEBOX_CORS` | `*` | Allowed CORS origins, comma-separated |
+
+### Backend container
+
+Set in `sonification/Dockerfile` (and partly by compose):
+
+| Variable | Image default | Description |
+|----------|---------------|-------------|
+| `JUKEBOX_DATA_DIR` | `/app/data` | Raw datasets (may be read-only) |
+| `JUKEBOX_CACHE_DIR` | `/app/cache` | Compositions + converted datasets (`_datasets/`); must be writable |
 | `JUKEBOX_CORS` | `*` | Allowed CORS origins |
+| `JUKEBOX_PREPARE` | `1` | `0` skips the raw-data conversion at start-up |
+| `JUKEBOX_MERGE_DATASETS` | `1` | Each variable is read from its own dataset, lined up by date |
+| `JUKEBOX_FULL_API` | `0` | `0`: only `/api/health`, `/api/instruments`, `/api/sonify`, `/api/zones/zone-data`; `1`: also the engine endpoints (`/api/compose`, `/api/datasets`, `/api/options`, …) |
+| `JUKEBOX_CHUNK_SECONDS` | `30` | Length of one `/api/sonify` chunk |
+| `PORT` | `8000` | Port uvicorn listens on inside the container |
 
-### Frontend
+### Webapp image
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VITE_API_URL` | `http://localhost:8000` | Backend API URL |
+| Build arg | Default | Description |
+|-----------|---------|-------------|
+| `VITE_API_URL` | `/api` | API base baked into the bundle at build time. Keep `/api` so nginx proxies to the backend |
 
 ---
 
 ## Volume Management
 
-### Data Volume
+| Volume | Mounted at | Content |
+|--------|------------|---------|
+| `jukebox-data` | backend `/app/data` (ro), webapp `/usr/share/nginx/data` (ro) | Raw monthly `.npy` maps, copied by `data-init` (registry flow only; the local build uses a bind mount) |
+| `jukebox-cache` | backend `/app/cache` | Generated compositions and the converted datasets (`_datasets/`) |
 
-Contains pre-processed climate data (~500MB).
+### Data volume (registry flow)
+
+`data-init` copies the data only if `/data/.initialized` is missing, so a new `datasets` image does not update an
+existing volume. To refresh it:
 
 ```bash
-# Create and populate data volume
-docker volume create earth-jukebox-data
+docker compose down
+docker volume rm jukebox-data
+docker compose up -d          # data-init copies again
 
-# Copy data into volume
-docker run --rm -v earth-jukebox-data:/data -v $(pwd)/data:/source alpine \
-  cp -r /source/* /data/
+# or pre-populate / refresh it by hand (pulls the datasets image)
+./scripts/init-data.sh        # optional tag: ./scripts/init-data.sh v1.0.0
 ```
 
-### Cache Volume
-
-Stores generated compositions. Can be safely cleared.
+Inspect it:
 
 ```bash
-# Clear cache
-docker volume rm earth-jukebox-cache
+docker run --rm -v jukebox-data:/data alpine ls -la /data
+```
+
+### Cache volume
+
+Can be safely cleared. The backend then re-converts the datasets on the next start (`preparing_data` until done).
+
+```bash
+docker compose down
+docker volume rm jukebox-cache
 ```
 
 ---
 
 ## Orchestral Samples
 
-For high-quality audio, download VSCO samples:
+By default the backend renders with the GeneralUser GS SoundFont (bundled in the image). For the VSCO 2 CE orchestral
+samples (~440 MB, CC0), build the backend image with:
 
 ```bash
-# Run once to download samples
-docker compose run --rm backend python music/sampler.py --download
+docker build --build-arg WITH_VSCO=1 -t earth-jukebox-sonification ../sonification
 ```
 
-This downloads ~440MB of orchestral samples.
+or uncomment `WITH_VSCO: "1"` in `docker-compose.local.yml`. `GET /api/health` reports `"orchestral_samples": true`
+when they are present.
 
 ---
 
 ## Logs and Monitoring
 
-### View Logs
-
 ```bash
-# All services
+# With the local build, prefix with: docker compose -f docker-compose.yml -f docker-compose.local.yml
 docker compose logs -f
-
-# Specific service
 docker compose logs -f backend
-
-# Last 100 lines
 docker compose logs --tail=100 backend
-```
-
-### Container Status
-
-```bash
 docker compose ps
-```
-
-### Resource Usage
-
-```bash
 docker stats
 ```
 
@@ -238,63 +274,56 @@ docker stats
 
 ## Troubleshooting
 
-### Container Won't Start
+### `docker compose up` fails pulling images
+
+`manifest unknown` / `denied` from `ghcr.io`: no image has been published yet (see the warning at the top), and the
+repositories are private, so published images will need `docker login ghcr.io` too. Use `./scripts/run-local.sh`.
+
+### Container won't start
 
 ```bash
-# Check logs
-docker compose logs backend
-
-# Rebuild
-docker compose build --no-cache backend
-docker compose up -d backend
+docker compose -f docker-compose.yml -f docker-compose.local.yml logs backend
+./scripts/run-local.sh rebuild
 ```
 
-### Port Already in Use
+### No sound / "backend unavailable" in the webapp
 
 ```bash
-# Find process using port
+curl http://localhost:8000/api/health     # "status": "ok"; check preparing_data, audio_rendering, mp3_encoding
+curl -v http://localhost/api/health       # same answer through the nginx proxy
+```
+
+### Globe shows no data
+
+The webapp reads `/data/`; check that the datasets are mounted:
+
+```bash
+curl http://localhost/data/               # JSON list of dataset folders
+```
+
+### Port already in use
+
+Port 80 or 8000 taken (e.g. by `uvicorn` or another web server): change `WEBAPP_PORT` / `BACKEND_PORT` in `.env`.
+
+```bash
 lsof -i :8000
-
-# Use different ports
-docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
-```
-
-### Out of Memory
-
-Increase Docker memory limit in Docker Desktop settings, or use:
-
-```yaml
-services:
-  backend:
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-```
-
-### Permission Issues
-
-```bash
-# Fix volume permissions
-docker compose run --rm backend chown -R 1000:1000 /data /cache
 ```
 
 ---
 
 ## Updating
 
-### Pull Latest Images
+### Local build
+
+```bash
+git -C ../webapp pull && git -C ../sonification pull && git -C ../datasets pull
+./scripts/run-local.sh            # rebuilds what changed
+```
+
+### Registry images (once published)
 
 ```bash
 docker compose pull
-docker compose up -d
-```
-
-### Rebuild from Source
-
-```bash
-git pull
-docker compose build
 docker compose up -d
 ```
 
@@ -302,23 +331,13 @@ docker compose up -d
 
 ## Cleanup
 
-### Remove Containers
-
 ```bash
-docker compose down
+docker compose down                     # containers
+docker compose down -v                  # + volumes (jukebox-data, jukebox-cache)
+docker compose down -v --rmi all        # + images
 ```
 
-### Remove Containers and Volumes
-
-```bash
-docker compose down -v
-```
-
-### Remove All (including images)
-
-```bash
-docker compose down -v --rmi all
-```
+With the local build, use `./scripts/run-local.sh down` or add `-f docker-compose.yml -f docker-compose.local.yml`.
 
 ---
 

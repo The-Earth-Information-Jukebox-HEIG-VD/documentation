@@ -1,6 +1,8 @@
 site_name: Earth Information Jukebox
 site_description: Transforming NASA climate data into accessible audio
 site_url: https://the-earth-information-jukebox-heig-vd.github.io/documentation
+# Port 8000 is reserved for the sonification API (the webapp proxies /api there)
+dev_addr: 127.0.0.1:8001
 repo_url: https://github.com/The-Earth-Information-Jukebox-HEIG-VD/documentation
 repo_name: Earth-Jukebox/documentation
 

@@ -17,47 +17,49 @@ We transform climate visualizations into **audio** through a process called **so
 ## How It Works
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  NASA Climate   │────▶│    Backend      │────▶│   Orchestral    │
-│     Data        │     │   Processing    │     │     Audio       │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-      GISTEMP              Normalization          Web Audio API
-      POWER API            Frequency mapping      Real instruments
-      SVS                  Score composition      MIDI synthesis
+┌─────────────────┐     ┌─────────────────────┐     ┌─────────────────┐
+│  NASA gridded   │────▶│  Sonification API   │────▶│     Webapp      │
+│  datasets       │     │  (FastAPI)          │     │  (React)        │
+└─────────────────┘     └─────────────────────┘     └─────────────────┘
+  one .npy per month       zone mean per month        globe + zone pick
+  720×1440, 0.25° grid     score composition          track selection
+  GISTEMP, GPM IMERG,      MIDI → MP3 rendering       30 s MP3 chunks
+  ISS LIS, Earth at Night  (VSCO / SoundFont)         played with Web Audio
 ```
 
-1. **Data Ingestion**: We fetch climate data from NASA APIs (GISTEMP for global temperatures, POWER for regional climate data)
+1. **Data preparation**: NASA sources (GISTEMP temperature anomalies, GPM IMERG rain and snow, ISS LIS lightning, Earth at Night lights, CO2 maps extracted by the team) are converted by the `data_processing` scripts onto one common 0.25° grid (720×1440), one `.npy` file per month, stored in the `datasets` repository.
 
-2. **Processing**: Raw values are normalized and mapped to musical parameters:
-   - Temperature → Pitch (higher temp = higher pitch)
-   - Precipitation → Violin melody intensity
-   - CO2 → Bass line depth
-   - And more...
+2. **Selection**: In the webapp, the user picks a zone on the globe (or in the list view) and enables instrument tracks. The track list comes from `GET /api/instruments`.
 
-3. **Composition**: An 8-instrument orchestra plays the data, with each instrument representing a different climate variable
+3. **Composition**: The webapp sends the zone's points, the enabled tracks and a start month to `POST /api/zones/zone-data`. The backend averages each dataset over the zone and maps values to musical parameters:
+   - Temperature anomaly → Piano chords (higher temp = higher pitch)
+   - Rain → Violin melody
+   - CO2 → Contrabass line
+   - Snow, lightning, night lights → Glockenspiel, Xylophone, Harp
 
-4. **Playback**: Users can play, pause, seek, and explore the audio representation of climate data
+4. **Playback**: The backend returns 30 seconds of MP3 (10 months of data, one bar per month) plus the next period to request. The webapp chains the chunks seamlessly, and the globe draws the raw dataset values for the month being played.
 
 ---
 
 ## Key Features
 
 ### Sonification Engine
-- Real-time audio synthesis using Web Audio API
-- Multiple instrument voices for different data channels
-- Configurable mapping between data and sound
+- Server-side composition and rendering (FastAPI, MIDI, VSCO orchestral samples or SoundFont fallback)
+- One instrument per dataset, each scaled on the whole series of the selected zone so the same value always gives the same note
+- Datasets with different time coverage are lined up by date; an instrument is silent where its data is missing
 
 ### Accessibility First
-- WCAG 2.1 AA compliant
-- Full keyboard navigation
-- Screen reader support
-- Audio transcripts for data explanations
+- Targets WCAG 2.1 AA
+- Full keyboard navigation (Space, arrow keys, Home/End, M)
+- Screen reader support with live announcements of the current value
+- List view as a non-visual alternative to the globe
+- Interface in English, French and German
 
 ### Interactive Exploration
-- Select regions on a map
-- Choose time periods
-- Adjust playback speed
-- Download generated audio
+- Select continents, countries, oceans and seas on a 3D globe or in a list
+- Enable or disable instrument tracks
+- Seek through time and jump to key climate moments
+- Watch the raw data of the selected zone drawn on the globe during playback
 
 ---
 
@@ -65,14 +67,18 @@ We transform climate visualizations into **audio** through a process called **so
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React, TypeScript, Web Audio API |
+| Frontend | React 19, TypeScript, Vite, react-globe.gl (three.js), i18next, Web Audio API (playback) |
 | Backend | FastAPI, Python, NumPy |
-| Audio | MIDI, SoundFont, VSCO orchestral samples |
-| Data | NASA GISTEMP, POWER API, SVS |
-| Deployment | Docker, GitHub Actions |
+| Audio | MIDI, VSCO 2 CE orchestral samples, GeneralUser GS SoundFont, MP3 output |
+| Data | NASA GISTEMP v4, GPM IMERG, ISS LIS (SVS), Earth at Night (SVS), CO2 maps |
+| Deployment | Docker, Docker Compose |
 
 ---
 
 ## Open Source
 
-All code is open source and available on GitHub under the [The-Earth-Information-Jukebox-HEIG-VD](https://github.com/The-Earth-Information-Jukebox-HEIG-VD) organization.
+All code is hosted on GitHub under the [The-Earth-Information-Jukebox-HEIG-VD](https://github.com/The-Earth-Information-Jukebox-HEIG-VD) organization.
+
+!!! note
+    At the time of writing, the code repositories are private and have no license file; only the documentation repository is public.
+

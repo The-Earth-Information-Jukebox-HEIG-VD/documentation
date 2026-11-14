@@ -2,87 +2,115 @@
 
 How climate data becomes music, and how to extend the system.
 
+The music engine lives in `sonification/music/` (`orchestra.py` composes the score, `render_audio.py` and `sampler.py` render it). It is driven by the backend (see [Backend Development](backend.md)) or from the command line.
+
 ---
 
 ## Pipeline Overview
 
 ```
-Data → Normalization → Pitch/Velocity Mapping → Score Composition → Audio Rendering
+Data (intensity maps) → Zone average → Normalization → Pitch/Velocity Mapping → Score Composition → Audio Rendering
 ```
 
 ---
 
 ## Data Loading
 
-Climate data is stored as intensity maps:
+The music side reads **intensity maps**: one `<prefix>_<variable>.npz` plus one `.json` of metadata per variable (the contract is `sonification/simulation/INTENSITY_MAP_SPEC.md`).
 
 ```python
+import json
 import numpy as np
 
-data = np.load("temperature.npz")
-intensity_map = data["values"]  # Shape: (frames, lat, lon)
-times = data["times"]           # Array of datetime strings
+z = np.load("simulation/output/real_daily_2024_surface_temperature.npz")
+data      = z["data"]       # [T, H, W] physical values in `units`; NaN = no data
+intensity = z["intensity"]  # [T, H, W] (data - vmin) / (vmax - vmin), clipped to 0..1
+lat, lon  = z["lat"], z["lon"]   # lat north → south, lon -180 → +180
+time      = z["time"]       # [T] ISO-8601 UTC timestamps
+meta = json.load(open("simulation/output/real_daily_2024_surface_temperature.json"))
+# meta: variable, units, source, vmin, vmax, resolution_deg, real, anomaly, ...
 ```
+
+The team's raw data (one `.npy` per month, a 720×1440 grid of 0.25° pixels, NaN = no data) is converted into these files by `sonification/backend/prepare_data.py`, which runs `sonification/simulation/build_monthly_dataset.py`. See [Backend Development](backend.md#datasets).
+
+Each frame is reduced to **one number per area**: the area-weighted (cos latitude) mean of the selected cells, ignoring NaN. The area is a preset zone, a lat/lon box or, from the webapp, the selected points.
 
 ---
 
 ## Normalization
 
-Values are normalized to 0-1 range:
+Each variable has a **fixed range** (`vmin`/`vmax` in its metadata, e.g. night lights 0 to 0.1, lightning 0 to 0.4, temperature anomaly -5 to +5 °C), so the same physical value always has the same intensity.
 
 ```python
-def normalize(value: float, min_val: float, max_val: float) -> float:
-    return (value - min_val) / (max_val - min_val)
-
-# Example: Temperature
-# -40°C → 0.0
-#   5°C → 0.5
-#  50°C → 1.0
+def normalize(value: float, vmin: float, vmax: float) -> float:
+    return min(max((value - vmin) / (vmax - vmin), 0.0), 1.0)
 ```
+
+Two normalizations are used (`--mapping`, default `hybrid`):
+
+- **relative**: 0 to 1 between the lowest and highest value of the area's series. This drives the **pitch contour**, so every line is melodic.
+- **absolute**: 0 to 1 between `vmin` and `vmax`. This drives **presence** (entries, loudness, density): no rain means no violins.
+
+### Same value, same note
+
+`/api/sonify` plays a long series chunk after chunk. With `pitch_range: "series"` (what `/api/sonify` uses) the lowest and highest note correspond to the lowest and highest value of the **whole series of the selected area**, not of the 30 seconds of one chunk. Without it, a yearly value (constant inside a chunk) would always be the same middle note, and consecutive chunks would not connect. The default of `/api/compose` is `"window"` (the piece's own minimum and maximum).
 
 ---
 
 ## Pitch Mapping
 
-Normalized values map to MIDI note numbers:
+In the default `data` style, a normalized value (0 to 1) picks a note on the **scale grid** of the instrument's register (`low`/`high` in `ORCHESTRA`):
 
 ```python
-def value_to_pitch(normalized: float, pitch_range: tuple[int, int] = (48, 84)) -> int:
-    low, high = pitch_range
-    return int(low + normalized * (high - low))
-
-# 0.0 → 48 (C3)
-# 0.5 → 66 (F#4)
-# 1.0 → 84 (C6)
+def pitch(norm: float, grid: list[int]) -> int:
+    # grid = the notes of the key/scale between the instrument's low and high
+    return grid[round(norm * (len(grid) - 1))]
 ```
+
+Defaults: key `C`, scale `major`, 76 BPM, 4 beats per bar. One data frame (one month for the deployed datasets) is one bar.
 
 ### Musical Scale Quantization
 
-Optionally snap to a scale:
+The `quantize` option sets the pitch grid: `scale` (default), `pentatonic` or `chromatic` (finest resolution). The scales available through `scale` are the seven-note ones:
 
 ```python
 SCALES = {
-    "major": [0, 2, 4, 5, 7, 9, 11],
-    "minor": [0, 2, 3, 5, 7, 8, 10],
-    "pentatonic": [0, 2, 4, 7, 9],
+    "major":          [0, 2, 4, 5, 7, 9, 11],
+    "minor":          [0, 2, 3, 5, 7, 8, 10],
+    "dorian":         [0, 2, 3, 5, 7, 9, 10],
+    "lydian":         [0, 2, 4, 6, 7, 9, 11],
+    "harmonic_minor": [0, 2, 3, 5, 7, 8, 11],
 }
+# "pentatonic" and "minor_pentatonic" also exist in zone_to_midi.py
 ```
 
 ---
 
 ## The Orchestra
 
-Each climate variable has an assigned instrument:
+Each climate variable has an assigned instrument, defined in the `ORCHESTRA` table of `sonification/music/orchestra.py`. The webapp's `dataset_id` is the short id returned by `GET /api/instruments`.
 
-| Variable | Instrument | MIDI Program | Role |
-|----------|------------|--------------|------|
-| Temperature | Piano | 0 | Chords |
-| CO2 | Contrabass | 43 | Bass |
-| Precipitation | Violins | 40 | Melody |
-| Dust | Flute | 73 | Melody |
-| Smoke | French Horns | 60 | Melody |
-| Lightning | Xylophone | 13 | Accents |
-| Snowfall | Glockenspiel | 9 | Melody |
+| `dataset_id` (internal variable) | Instrument | MIDI program | Role | Register (MIDI) | Always on |
+|---|---|---|---|---|---|
+| `temperature` (`surface_temperature`) | Piano (chords) | 0 | harmony | 48–72 | yes |
+| `co2` | Contrabass | 43 | bass | 28–50 | yes |
+| `precipitation` (rain) | Violins (melody) | 48 | melody | 67–91 | no |
+| `snow` (`snowfall`) | Glockenspiel (melody) | 9 | melody | 67–88 | no |
+| `lightning` | Xylophone | 13 | percussion (`timpani` role in the code) | 77–101 | no |
+| `night_lights` (`nightlights`) | Harp (melody) | 46 | melody | 60–84 | no |
+| (`aerosol_dust`) | Flute (melody) | 73 | melody | 72–93 | no |
+| (`aerosol_smoke`) | French Horns (melody) | 60 | melody | 53–74 | no |
+
+The "always on" instruments (temperature, CO2) are the foundation; the others play when the phenomenon is present, so an instrument entering is itself information. Dust and smoke exist in the orchestra but, in the deployed backend, have no dataset: only variables that have data are listed by `GET /api/instruments`.
+
+Notes on the deployed datasets:
+
+- Temperature is an **anomaly** in °C (the piano plays the anomaly itself); `GET /api/instruments` reports its units as `degC anomaly`.
+- Lightning is the **share of the area with lightning** (0 to 1), not a flash count, and only exists between 55°S and 55°N.
+- Night lights are **yearly**: one value per year repeated for its 12 months, so the harp holds its note for a year and steps in January.
+- A variable is silent for the months its data does not cover, so one piece can mix series with different start dates.
+
+There are also regional palettes (`palette: "auto"` swaps in local instruments for the zone, e.g. sitar for India); they are defined in `PALETTES` in `orchestra.py` and listed by `GET /api/options` (engine API only).
 
 ---
 
@@ -91,67 +119,66 @@ Each climate variable has an assigned instrument:
 ### 1. Define the Instrument
 
 ```python
-# music/orchestra.py
+# sonification/music/orchestra.py
 ORCHESTRA = {
-    "sea_level": {
-        "label": "Sea Level Rise",
-        "instrument": "Cello",
-        "role": "bass",
-        "midi_program": 42,
-        "pitch_range": [36, 60],
-        "always_playing": True,
-        "units": "mm",
-    },
+    # ...
+    "sea_level": dict(name="Sea level - Cello (melody)", role="melody", program=42, channel=8,
+                      low=36, high=60, gain=2.0, gate=0.03, levels=[0.35, 0.65],
+                      level=0.80, pan=60),
 }
 ```
 
-### 2. Create Intensity Map
+Pick an unused MIDI `channel`. `always_on=True` makes it a foundation instrument; `gain` and `gate` control when it enters; `levels` are the density thresholds. Copy the closest existing entry and adjust.
 
-```python
-# Save as NPZ with metadata JSON
-np.savez_compressed(
-    "simulation/output/sea_level.npz",
-    values=intensity_map,
-    times=time_strings
-)
-```
+### 2. Produce the Intensity Map
 
-### 3. Register in Composer
+Either deliver `<prefix>_<variable>.npz` + `.json` in the format of `INTENSITY_MAP_SPEC.md` (fixed `vmin`/`vmax`, NaN for no data) into `JUKEBOX_DATA_DIR`, or add the variable to the converter:
 
-The composer automatically picks up instruments from `ORCHESTRA`.
+- add a line to `SOURCES` (and `INPUT_ARGS`) in `sonification/simulation/build_monthly_dataset.py` (file pattern, units, `vmin`, `vmax`),
+- add a pattern to `INPUTS` and a recipe to `RECIPES` in `sonification/backend/prepare_data.py`.
+
+### 3. Expose it to the API
+
+The composer picks up variables from `ORCHESTRA` automatically. For the short `dataset_id` the webapp sends, add the id to `SHORT_IDS` (variable → `dataset_id`) and, if the webapp uses another name, to `VARIABLE_ALIASES` in `sonification/backend/app.py`. The webapp's own list of tracks is separate (`webapp/src/data/tracks.ts`).
 
 ---
 
 ## Score Structure
 
+`orchestra.compose()` returns a score document (the `score` object of `POST /api/compose`, see the [API reference](../api/reference.md)):
+
 ```python
-@dataclass
-class Score:
-    zone: str
-    key: str       # "C", "D", "Eb", etc.
-    scale: str     # "major", "minor"
-    bpm: float
-    bars: list[Bar]
-    instruments: dict[str, InstrumentTrack]
+score = {
+    "zone": "switzerland", "bbox": [...], "palette": "orchestra",
+    "key": "C", "scale": "major", "bpm": 76, "beats_per_bar": 4,
+    "n_bars": 24, "duration_s": 75.79,
+    "time_start": "...", "time_end": "...",
+    "bars": [...],         # index, start_s, time (data date), tension, ...
+    "instruments": {...},  # per variable: notes, values_per_beat, pitch_range, units, ...
+    "sections": [...], "stats": {...},
+}
 ```
 
 Music is organized into bars:
-- Default: 4 beats per bar
-- Each bar = one data frame (month/week/day)
-- Tempo controls playback speed (default: 76 BPM)
+
+- 4 beats per bar
+- Each bar = one data frame (one month for the deployed monthly datasets; one week for daily data, `frames_per_bar` = 7)
+- `bpm` defaults to 76; with `duration_s` the tempo is nudged so the bars last exactly that many seconds (30 s at the default tempo is 10 bars, so a chunk of `/api/sonify` is 10 months)
+
+There are two styles. `data` (default) is faithful to the data: pitch = value, loudness/density = amount, nothing added. `musical` adds harmony, an intro that introduces the instruments, a climax on the most anomalous bar and a ritardando outro. The webapp's chunks use `data`.
 
 ---
 
 ## Audio Rendering
 
+Rendering is in `sonification/music/render_audio.py` and `sampler.py`. MIDI is turned into audio with real orchestral samples (VSCO 2 CE, CC0) when installed, otherwise with the GeneralUser GS SoundFont, plus a hall reverb. `audio_engine` is `auto` (default), `vsco` or `sf2`. MP3 encoding needs `ffmpeg` on the PATH.
+
 ### SoundFont Rendering
 
-```python
-import tinysoundfont
-
-synth = tinysoundfont.Synth()
-synth.load("soundfont.sf2")
-audio = synth.render_float(sample_rate=44100)
+```bash
+pip install --no-deps tinysoundfont          # --no-deps: it would otherwise pull in pyaudio
+python music/render_audio.py --download      # fetch the SoundFont once (~32 MB)
+python music/render_audio.py file.mid --engine sf2
 ```
 
 ### VSCO Orchestral Samples
@@ -162,43 +189,46 @@ For high-quality audio:
 python music/sampler.py --download  # ~440MB one-time
 ```
 
+In Docker the SoundFont is always baked in; the samples are included with `--build-arg WITH_VSCO=1`.
+
+The rendered MP3 is about 1.7 s longer than `duration_s` because the reverb rings out after the last note; the webapp overlaps that tail with the next chunk.
+
 ---
 
 ## Anomaly Markers
 
-Add percussion for unusual values:
+In `data` style, one percussion hit on the first beat of each bar whose temperature is at least 1.5 standard deviations from its seasonal normal (hot = triangle, cold = wood block):
 
 ```python
-ANOMALY_MARKERS = {
-    "hot": 81,   # Open triangle
-    "cold": 77,  # Wood block
-}
-
-if z_score > 2:  # Very hot
-    markers.append(Note(pitch=81, channel=9))  # Drums
+MARKER_HOT, MARKER_COLD = 81, 77      # GM drums on channel 9: open triangle, low wood block
+# marker_threshold = 1.5 (z-score)
 ```
+
+Datasets whose values are already anomalies (the deployed temperature series) have no `anomaly_markers` track: the piano already plays the anomaly.
 
 ---
 
 ## Testing Sonification
 
-```python
-def test_pitch_mapping():
-    assert value_to_pitch(0.0, (48, 84)) == 48
-    assert value_to_pitch(1.0, (48, 84)) == 84
-    assert value_to_pitch(0.5, (48, 84)) == 66
+The API tests are end-to-end and need data in `JUKEBOX_DATA_DIR` (or generate some with `simulation/simulate_variables.py`):
+
+```bash
+cd sonification
+python -m pytest backend/test_api.py -q
+python -m pytest backend/test_prepare_data.py -q   # raw-folder conversion
+python -m pytest simulation/test_build_monthly_dataset.py -q
 ```
+
+For the pitch mapping, a quick check is that the data-style melody follows the data (`test_data_style_follows_the_data` in `backend/test_api.py`: correlation between value and pitch).
 
 ---
 
 ## Example: Temperature Over Time
 
-| Year | Anomaly | Normalized | Pitch | Note |
-|------|---------|------------|-------|------|
-| 2020 | +1.02°C | 0.76 | 73 | C#5 |
-| 2021 | +0.85°C | 0.68 | 70 | Bb4 |
-| 2022 | +0.89°C | 0.70 | 71 | B4 |
-| 2023 | +1.17°C | 0.83 | 75 | D#5 |
-| 2024 | +1.54°C | 1.00 | 84 | C6 |
+With the temperature anomaly dataset (1880 → 2025, 1 bar = 1 month), the piano root follows the area's anomaly. With `pitch_range: "series"` the lowest anomaly of the area's whole series is the bottom of the piano's register and the highest the top, so:
 
-Result: An ascending melodic line reflecting rising temperatures.
+- a cold decade of the 1900s plays low,
+- the most recent record years play near the top,
+- a chunk starting in `1950-01` and the next one (`next_time_period`) use the same scale, so they connect.
+
+Result: an ascending line over the decades, reflecting rising temperatures.

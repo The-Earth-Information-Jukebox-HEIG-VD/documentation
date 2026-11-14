@@ -6,266 +6,129 @@ Continuous Integration and Deployment with GitHub Actions.
 
 ## Overview
 
+Each repository of the [organization](https://github.com/The-Earth-Information-Jukebox-HEIG-VD) carries its own
+workflows. There is no test workflow and no automatic deployment of the application: images are published on
+version tags, and the documentation is published on every push to `main`.
+
+| Repository | Workflow | Trigger | Does |
+|------------|----------|---------|------|
+| `webapp` | `.github/workflows/docker-publish.yml` | tag `v*`, push to branch `fb-docker-support` | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/webapp` |
+| `sonification` | `.github/workflows/docker-publish.yml` | tag `v*`, push to branch `fb-docker-support` | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/sonification` |
+| `datasets` | `.github/workflows/docker-publish.yml` | tag `v*` | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/datasets` |
+| `documentation` | `.github/workflows/deploy-pages.yml` | push to `main`, manual | Build MkDocs, deploy to GitHub Pages |
+| `deployment`, `data_processing` | none | | |
+
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│    Push     │────▶│    Test     │────▶│    Build    │────▶│   Deploy    │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-   Trigger           Lint, Test          Docker Image       Staging/Prod
-                     A11y Tests          Static Files
+git tag v* ──▶ docker-publish.yml ──▶ ghcr.io/.../<repo>:<version>, :<major.minor>, :latest
+                                              │
+                                              ▼
+                     deployment: docker compose pull (TAG / DATA_TAG in .env)
+
+push main (documentation) ──▶ deploy-pages.yml ──▶ GitHub Pages
 ```
+
+!!! warning "Current state"
+    No `v*` tag exists in any repository and the `fb-docker-support` branches no longer exist, so the
+    `docker-publish.yml` workflows have **never run** and no image is on GHCR. Only the documentation workflow has
+    run (successfully). To run the stack today, build locally (see [Docker](docker.md#quick-start-local-build)).
 
 ---
 
-## GitHub Actions Workflows
+## Docker Image Workflows
 
-### Test Workflow
-
-Runs on every push and pull request.
+`webapp`, `sonification` and `datasets` share the same structure (`docker-publish.yml`):
 
 ```yaml
-# .github/workflows/test.yml
-name: Tests
+name: Docker Build & Push
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
-
-jobs:
-  frontend-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: webapp
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: webapp/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Type check
-        run: npx tsc --noEmit
-
-      - name: Unit tests
-        run: npm run test -- --coverage
-
-      - name: Accessibility tests
-        run: npm run test:a11y
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage/lcov.info
-
-  backend-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: sonification
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt pytest pytest-cov
-
-      - name: Run tests
-        run: pytest --cov=backend --cov-report=xml
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.xml
-```
-
-### Build Workflow
-
-Builds Docker images on main branch.
-
-```yaml
-# .github/workflows/build.yml
-name: Build
-
-on:
-  push:
-    branches: [main]
-    tags: ['v*']
+    tags:
+      - 'v*'
+    branches:
+      - 'fb-docker-support'   # webapp and sonification only, for testing the workflow
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}   # e.g. The-Earth-Information-Jukebox-HEIG-VD/webapp
 
 jobs:
-  build-frontend:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Login to Container Registry
-        uses: docker/login-action@v3
+      - uses: actions/checkout@v4                 # datasets: with lfs: true
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3              # GITHUB_TOKEN, no extra secret
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
+      - id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=sha
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
+            type=semver,pattern={{version}}         # v1.0.0 → 1.0.0
+            type=semver,pattern={{major}}.{{minor}} # v1.0.0 → 1.0
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=ref,event=branch                   # webapp / sonification: branch name
+      - uses: docker/build-push-action@v5
         with:
-          context: ./webapp
+          context: .
+          file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-  build-backend:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Login to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: ./sonification
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha                      # webapp / sonification
+          cache-to: type=gha,mode=max
+          build-args: |
+            VITE_API_URL=/api                       # webapp only
 ```
 
-### Deploy Workflow
+Differences between the three:
 
-Deploys to production on release.
+- **webapp**: build arg `VITE_API_URL=/api`, GitHub Actions layer cache, branch tag.
+- **sonification**: GitHub Actions layer cache, branch tag; builds without `WITH_VSCO` (SoundFont only, no orchestral samples).
+- **datasets**: tag-only trigger, checks out with `lfs: true`, always tags `latest`, no layer cache.
 
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy
+Image names are lowercased by `docker/metadata-action`, which gives the
+`ghcr.io/the-earth-information-jukebox-heig-vd/<repo>` names used in `deployment/docker-compose.yml`.
 
-on:
-  release:
-    types: [published]
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
+---
 
-jobs:
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'production' }}
+## Releasing Images
 
-    steps:
-      - uses: actions/checkout@v4
+Push a semver tag in **each** repository whose image you want to publish:
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+```bash
+# in webapp/, sonification/ and datasets/
+git tag v1.0.0
+git push origin v1.0.0
+```
 
-      - name: Install Vercel CLI
-        run: npm i -g vercel
+Each push produces `:1.0.0`, `:1.0` and `:latest`. Then, on the server, set `TAG` (webapp + sonification) and
+`DATA_TAG` (datasets) in `deployment/.env` and pull (see [Production](production.md#updating)). The two tags are
+separate so data and code can be versioned independently.
 
-      - name: Deploy to Vercel
-        run: |
-          cd webapp
-          vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+!!! note
+    The `datasets` image contains all of `datasets/data` (~6.3 GB at the moment); expect a long build and push.
+    Packages created from private repositories are private: deployment hosts need `docker login ghcr.io`.
 
-  deploy-backend:
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'production' }}
+Watch the runs:
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to Railway
-        uses: bervProject/railway-deploy@v1
-        with:
-          railway_token: ${{ secrets.RAILWAY_TOKEN }}
-          service: backend
-
-  deploy-docs:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install MkDocs
-        run: pip install mkdocs-material
-
-      - name: Build docs
-        run: |
-          cd documentation
-          mkdocs build
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./documentation/site
+```bash
+gh run list -R The-Earth-Information-Jukebox-HEIG-VD/webapp
+gh run view --log -R The-Earth-Information-Jukebox-HEIG-VD/webapp
 ```
 
 ---
 
 ## Documentation Deployment
 
-Auto-deploy docs on push to main.
+Auto-deploys these docs on every push to `main` (or by hand from the Actions tab).
 
 ```yaml
 # documentation/.github/workflows/deploy-pages.yml
@@ -274,17 +137,23 @@ name: Deploy Documentation
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -314,155 +183,63 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
+Published at <https://the-earth-information-jukebox-heig-vd.github.io/documentation>. The repository's Pages source
+must be set to **GitHub Actions** (Settings → Pages).
+
+---
+
+## Tests and Linting
+
+There is **no CI test workflow** on GitHub. Run the checks locally before pushing:
+
+```bash
+# webapp
+npm run lint
+npx tsc --noEmit
+npm run test -- --run
+
+# sonification
+python -m pytest backend simulation -q
+```
+
+!!! note "GitLab CI leftover"
+    `webapp/.gitlab-ci.yml` defines lint / typecheck / test / build stages and a GitLab Pages deploy on tags.
+    The repository is hosted on GitHub, so this pipeline does not run.
+
 ---
 
 ## Secrets Configuration
 
-### Required Secrets
-
-Configure in GitHub repository settings:
-
-| Secret | Description |
-|--------|-------------|
-| `VERCEL_TOKEN` | Vercel API token |
-| `VERCEL_ORG_ID` | Vercel organization ID |
-| `VERCEL_PROJECT_ID` | Vercel project ID |
-| `RAILWAY_TOKEN` | Railway API token |
-| `CODECOV_TOKEN` | Codecov upload token |
-
-### Setting Secrets
-
-```bash
-# Via GitHub CLI
-gh secret set VERCEL_TOKEN --body "your-token"
-```
-
-Or via GitHub web interface: Settings → Secrets and variables → Actions
-
----
-
-## Branch Protection
-
-Configure branch protection for `main`:
-
-- Require pull request reviews
-- Require status checks to pass:
-  - `frontend-test`
-  - `backend-test`
-- Require branches to be up to date
-
----
-
-## Environments
-
-### Staging
-
-- Auto-deploy on push to `develop`
-- Manual approval not required
-
-### Production
-
-- Deploy on release or manual trigger
-- Require manual approval
-- Environment-specific secrets
-
-Configure in: Settings → Environments
-
----
-
-## Notifications
-
-### Slack Notification
-
-```yaml
-- name: Notify Slack
-  uses: 8398a7/action-slack@v3
-  with:
-    status: ${{ job.status }}
-    channel: '#deployments'
-  env:
-    SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-  if: always()
-```
-
-### GitHub Status Badge
-
-Add to README:
-
-```markdown
-![Tests](https://github.com/ORG/REPO/actions/workflows/test.yml/badge.svg)
-![Deploy](https://github.com/ORG/REPO/actions/workflows/deploy.yml/badge.svg)
-```
-
----
-
-## Caching
-
-### Node Modules
-
-```yaml
-- uses: actions/setup-node@v4
-  with:
-    node-version: '20'
-    cache: 'npm'
-    cache-dependency-path: webapp/package-lock.json
-```
-
-### Python Dependencies
-
-```yaml
-- uses: actions/setup-python@v5
-  with:
-    python-version: '3.12'
-    cache: 'pip'
-```
-
-### Docker Layers
-
-```yaml
-- uses: docker/build-push-action@v5
-  with:
-    cache-from: type=gha
-    cache-to: type=gha,mode=max
-```
+None needed: the image workflows authenticate to GHCR with the built-in `GITHUB_TOKEN` (`packages: write`), and
+the Pages workflow uses OIDC (`id-token: write`).
 
 ---
 
 ## Troubleshooting
 
-### Failed Tests
+### Workflow did not start
 
-```bash
-# View workflow logs
-gh run view --log
-
-# Re-run failed jobs
-gh run rerun
-```
+- Check the tag matches `v*` and was pushed (`git push origin <tag>`, not only `git push`).
+- `gh run list -R The-Earth-Information-Jukebox-HEIG-VD/<repo>`
 
 ### Build Failures
 
-```bash
-# Local Docker build
-docker build -t test-build ./webapp
-
-# Check Dockerfile syntax
-docker build --check ./webapp
-```
-
-### Deployment Issues
+Reproduce locally:
 
 ```bash
-# Check deployment status
-gh deployment list
-
-# View environment URL
-gh api repos/:owner/:repo/deployments
+docker build -t test-webapp ../webapp
+docker build -t test-sonification ../sonification
+docker build --check ../webapp          # Dockerfile lint (BuildKit)
 ```
+
+### Push denied to GHCR
+
+The workflow needs `packages: write` (set in the file). If the package already exists and is linked to another
+repository, grant this repository write access in the package settings.
 
 ---
 
 ## Next Steps
 
 - [Docker Deployment](docker.md)
-- [Production Checklist](production.md)
+- [Production Deployment](production.md)

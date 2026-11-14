@@ -1,247 +1,136 @@
 # Testing Guide
 
-Comprehensive guide for testing Earth Information Jukebox.
+Guide for testing Earth Information Jukebox.
 
 ---
 
 ## Overview
 
-We use multiple testing strategies:
+| Type | Tool | Where | Purpose |
+|------|------|-------|---------|
+| Unit tests | Vitest | `webapp/src/**/*.test.ts(x)` | Functions, hooks, `ChunkPlayer`, API client |
+| Component tests | Vitest + Testing Library | `webapp/src/components/**` | Component behaviour |
+| Accessibility tests | jest-axe | inside component tests | WCAG checks |
+| Backend tests | pytest | `sonification/backend`, `sonification/simulation` | API and data preparation |
+| Runtime a11y checks | axe-core (dev only) | browser console | Violations while developing |
 
-| Type | Tool | Purpose |
-|------|------|---------|
-| Unit Tests | Vitest/pytest | Test individual functions |
-| Integration Tests | Testing Library | Test component interactions |
-| Accessibility Tests | jest-axe/axe-core | WCAG compliance |
-| End-to-End Tests | Playwright | Full user flows |
+!!! note "Not set up yet"
+    There are no end-to-end tests (Playwright is not installed), no coverage tooling or thresholds, and no CI workflow that runs the tests. The only GitHub Actions workflow in `webapp` builds and publishes the Docker image.
 
 ---
 
 ## Frontend Testing
 
-### Setup
+### Running the tests
 
 ```bash
 cd webapp
 npm install
-npm run test
+npm run test            # Vitest in watch mode
+npx vitest run          # single run (currently 16 files, 112 tests)
+npx vitest run src/audio/ChunkPlayer.test.ts   # one file
 ```
 
-### Unit Tests
+Vitest runs in a `jsdom` environment with globals enabled; the setup file is `src/test/setup.ts`. Tests are discovered with the pattern `src/**/*.{test,spec}.{ts,tsx,...}`.
 
-Test individual functions and utilities:
+### Test setup (`src/test/setup.ts`)
+
+The setup file:
+
+- registers the `jest-axe` matcher `toHaveNoViolations`
+- mocks `window.matchMedia` and `localStorage`
+- replaces `window.AudioContext` with `MockAudioContext`, which implements `decodeAudioData`, `createBufferSource`, gain and filter nodes; created buffer sources are collected in `MockAudioContext.sources` so tests can check what was scheduled and when
+
+The backend is never called in tests: `ChunkPlayer` takes an injectable `fetchChunk` function and the API client is tested with a mocked `fetch`.
+
+### What is covered
+
+| Test file | Covers |
+|-----------|--------|
+| `audio/ChunkPlayer.test.ts` | Chaining via `next_time_period`, scheduling at `duration_s`, prefetch, completion on `null` |
+| `services/sonificationApi.test.ts` | Request/response handling, `ApiError` kinds, FastAPI `detail` parsing |
+| `hooks/useInstruments.test.ts` | Track list built from `/api/instruments` |
+| `hooks/useZoneDataFrames.test.ts` | Month-by-month dataset loading |
+| `utils/npy.test.ts`, `zoneCells.test.ts`, `reading.test.ts`, `zoneName.test.ts` | `.npy` parsing, zone grid cells, value formatting, zone names |
+| `components/player/AudioPlayerEnhanced.test.tsx` | Blocked Play, live regions, axe |
+| `components/panels/TrackSelector.test.tsx` | Track panel (unavailable tracks, badges), axe |
+| `components/visualization/GlobeView.test.tsx`, `ListViewWater.test.tsx` | Globe and list views, axe |
+| `components/ZoneViewSelector.test.tsx`, `data/zones/zones.test.ts` | Zone selector, zone data |
+| `components/AudioPlayer.test.tsx`, `DataVisualizer.test.tsx` | Legacy components (not mounted in the app) |
+
+### Unit test example: ChunkPlayer
+
+`ChunkPlayer` receives its network function, so the whole chunk chain can be tested without a server:
 
 ```typescript
-// src/audio/utils.test.ts
-import { describe, it, expect } from 'vitest';
-import { valueToFrequency, normalizeValue } from './utils';
+import { ChunkPlayer } from './ChunkPlayer';
+import { MockAudioContext } from '../test/setup';
 
-describe('valueToFrequency', () => {
-  it('maps minimum value to minimum frequency', () => {
-    expect(valueToFrequency(0, 0, 100, 220, 880)).toBe(220);
-  });
+const fetchChunk = vi.fn(async (req: ZoneDataRequest) =>
+  req.time_period === '1950-01' ? chunk('1950-01', '1960-01') : chunk('1960-01', null)
+);
+const player = new ChunkPlayer({ fetchChunk });
+player.onComplete = onComplete;
+player.setParams({ zoneId: 'europe', zoneName: 'Europe', points, datasetIds: ['temperature'] });
 
-  it('maps maximum value to maximum frequency', () => {
-    expect(valueToFrequency(100, 0, 100, 220, 880)).toBe(880);
-  });
-
-  it('maps mid value to mid frequency', () => {
-    expect(valueToFrequency(50, 0, 100, 220, 880)).toBe(550);
-  });
-});
-
-describe('normalizeValue', () => {
-  it('normalizes to 0-1 range', () => {
-    expect(normalizeValue(-40, -40, 50)).toBe(0);
-    expect(normalizeValue(50, -40, 50)).toBe(1);
-    expect(normalizeValue(5, -40, 50)).toBeCloseTo(0.5);
-  });
-});
+await player.play('1950-01');
+expect(MockAudioContext.sources).toHaveLength(1);
+player.tick();   // drive the progress/prefetch clock without timers
 ```
 
-### Component Tests
-
-Test React components:
+### Component test example: accessibility
 
 ```typescript
-// src/components/AudioPlayer.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { AudioPlayer } from './AudioPlayer';
+import { render, screen } from '@testing-library/react';
+import { axe } from 'jest-axe';
+import '../../i18n';
+import { AudioPlayerEnhanced } from './AudioPlayerEnhanced';
 
-const mockData = [
-  { year: 2020, value: 1.02, unit: '°C' },
-  { year: 2021, value: 0.85, unit: '°C' },
-];
-
-describe('AudioPlayer', () => {
-  it('renders play button', () => {
-    render(<AudioPlayer data={mockData} />);
-    expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
-  });
-
-  it('toggles to pause when playing', async () => {
-    render(<AudioPlayer data={mockData} />);
-
-    const playButton = screen.getByRole('button', { name: /play/i });
-    fireEvent.click(playButton);
-
-    expect(await screen.findByRole('button', { name: /pause/i })).toBeInTheDocument();
-  });
-
-  it('displays current data point', () => {
-    render(<AudioPlayer data={mockData} />);
-    expect(screen.getByText(/2020/)).toBeInTheDocument();
-  });
-
-  it('calls onProgress callback', () => {
-    const onProgress = vi.fn();
-    render(<AudioPlayer data={mockData} onProgress={onProgress} />);
-
-    // Simulate playback progress
-    // ...
+describe('AudioPlayerEnhanced accessibility', () => {
+  it('blocked Play stays focusable and is described', async () => {
+    const { container } = render(<AudioPlayerEnhanced {...base} playDisabled />);
+    const play = screen.getByRole('button', { name: /play sonification/i });
+    expect(play).toHaveAttribute('aria-disabled', 'true');
+    expect(play).toHaveAccessibleDescription(/select a zone/i);
+    expect(await axe(container)).toHaveNoViolations();
   });
 });
 ```
 
-### Hook Tests
+Import `'../../i18n'` in component tests so translated labels resolve.
 
-Test custom hooks:
+---
 
-```typescript
-// src/hooks/useSonification.test.ts
-import { renderHook, act } from '@testing-library/react';
-import { useSonification } from './useSonification';
+## Filtered Test Scripts
 
-describe('useSonification', () => {
-  const mockData = [
-    { year: 2020, value: 1.0, unit: '°C' },
-    { year: 2021, value: 1.2, unit: '°C' },
-  ];
+Two scripts filter by **test name** (`--testNamePattern`), not by folder:
 
-  it('initializes with default state', () => {
-    const { result } = renderHook(() => useSonification(mockData));
-
-    expect(result.current.isPlaying).toBe(false);
-    expect(result.current.progress).toBe(0);
-    expect(result.current.volume).toBe(0.7);
-  });
-
-  it('updates isPlaying when play is called', async () => {
-    const { result } = renderHook(() => useSonification(mockData));
-
-    await act(async () => {
-      await result.current.play();
-    });
-
-    expect(result.current.isPlaying).toBe(true);
-  });
-});
+```bash
+npm run test:audio   # tests whose name contains "audio" (currently 4 tests)
+npm run test:a11y    # tests whose name contains "accessibility" (currently 27 tests)
 ```
 
-### Mocking Web Audio API
+So `test:a11y` only runs tests inside a `describe` (or `it`) whose name contains the word `accessibility`, for example `describe('AudioPlayerEnhanced accessibility', ...)`. **Keep that word in the name of new accessibility tests**, otherwise they are skipped by this script. The match is case-sensitive.
 
-```typescript
-// test/mocks/webAudio.ts
-export const mockAudioContext = () => {
-  const oscillator = {
-    connect: vi.fn(),
-    start: vi.fn(),
-    stop: vi.fn(),
-    frequency: {
-      setValueAtTime: vi.fn(),
-      linearRampToValueAtTime: vi.fn(),
-    },
-  };
+Add `-- --reporter=verbose` for detailed output:
 
-  const gainNode = {
-    connect: vi.fn(),
-    gain: {
-      setValueAtTime: vi.fn(),
-      linearRampToValueAtTime: vi.fn(),
-    },
-  };
-
-  return {
-    createOscillator: vi.fn(() => oscillator),
-    createGain: vi.fn(() => gainNode),
-    destination: {},
-    resume: vi.fn().mockResolvedValue(undefined),
-    suspend: vi.fn().mockResolvedValue(undefined),
-    close: vi.fn().mockResolvedValue(undefined),
-    state: 'running',
-    currentTime: 0,
-  };
-};
-
-// In test setup
-beforeEach(() => {
-  window.AudioContext = vi.fn().mockImplementation(mockAudioContext);
-});
+```bash
+npm run test:a11y -- --reporter=verbose
 ```
 
 ---
 
 ## Accessibility Testing
 
-### Automated Tests with jest-axe
+### Automated (jest-axe)
+
+Run `axe` on the rendered container and assert `toHaveNoViolations()` (see the example above). Automated checks catch only part of WCAG: also complete the manual checklist in the [Accessibility guide](../user-guide/accessibility.md) (keyboard, screen reader, contrast, reduced motion).
+
+### Development-time checks
+
+`@axe-core/react` runs automatically in development (`src/main.tsx`):
 
 ```typescript
-// src/components/AudioPlayer.a11y.test.tsx
-import { render } from '@testing-library/react';
-import { axe, toHaveNoViolations } from 'jest-axe';
-import { AudioPlayer } from './AudioPlayer';
-
-expect.extend(toHaveNoViolations);
-
-describe('AudioPlayer Accessibility', () => {
-  it('has no accessibility violations', async () => {
-    const { container } = render(<AudioPlayer data={mockData} />);
-    const results = await axe(container);
-    expect(results).toHaveNoViolations();
-  });
-
-  it('has proper ARIA attributes', () => {
-    render(<AudioPlayer data={mockData} />);
-
-    const region = screen.getByRole('region');
-    expect(region).toHaveAttribute('aria-label');
-
-    const slider = screen.getByRole('slider');
-    expect(slider).toHaveAttribute('aria-valuemin');
-    expect(slider).toHaveAttribute('aria-valuemax');
-    expect(slider).toHaveAttribute('aria-valuenow');
-  });
-
-  it('has visible focus indicators', () => {
-    const { container } = render(<AudioPlayer data={mockData} />);
-
-    const button = screen.getByRole('button');
-    button.focus();
-
-    // Check computed styles for focus indicator
-    const styles = window.getComputedStyle(button);
-    expect(styles.outline).not.toBe('none');
-  });
-});
-```
-
-### Running Accessibility Tests
-
-```bash
-# Run all a11y tests
-npm run test:a11y
-
-# Run with detailed output
-npm run test:a11y -- --reporter=verbose
-```
-
-### Development-Time Checks
-
-axe-core runs automatically in development:
-
-```typescript
-// src/main.tsx (development only)
 if (import.meta.env.DEV) {
   import('@axe-core/react').then((axe) => {
     axe.default(React, ReactDOM, 1000);
@@ -249,298 +138,43 @@ if (import.meta.env.DEV) {
 }
 ```
 
-Check browser console for violations.
+Check the browser console for violations while using the app. `npm run lint` also enforces the `jsx-a11y` rules.
 
 ---
 
 ## Backend Testing
 
-### Setup
+The backend tests are plain pytest files next to the code (no `tests/` directory):
+
+| File | Covers |
+|------|--------|
+| `sonification/backend/test_api.py` | End-to-end API tests with FastAPI's `TestClient` (health, options, datasets, compose, sonify...) |
+| `sonification/backend/test_prepare_data.py` | Data preparation |
+| `sonification/simulation/test_build_monthly_dataset.py` | Monthly dataset builder |
 
 ```bash
-cd sonification/backend
-source venv/bin/activate
-pip install pytest pytest-asyncio pytest-cov
-pytest
+cd sonification
+pip install -r requirements.txt     # includes pytest and httpx
+python -m pytest backend/test_api.py -q
+python -m pytest backend simulation -q
 ```
 
-### Unit Tests
+`test_api.py` can also be run directly with `python backend/test_api.py`. It uses a temporary cache directory (`JUKEBOX_CACHE_DIR`) and picks datasets from `GET /api/datasets`, so the datasets must be available (the first test asserts at least one dataset exists; see `sonification/README.md` for how to generate them).
+
+Minimal example, in the style of the existing tests:
 
 ```python
-# tests/test_mappings.py
-import pytest
-import numpy as np
-from music.mappings import value_to_pitch, normalize_array
-
-def test_value_to_pitch():
-    # Min value → min pitch
-    assert value_to_pitch(0.0, (48, 84)) == 48
-
-    # Max value → max pitch
-    assert value_to_pitch(1.0, (48, 84)) == 84
-
-    # Mid value → mid pitch
-    assert value_to_pitch(0.5, (48, 84)) == 66
-
-def test_normalize_array():
-    values = np.array([-40, 5, 50])
-    normalized = normalize_array(values, -40, 50)
-
-    np.testing.assert_array_almost_equal(
-        normalized,
-        [0.0, 0.5, 1.0]
-    )
-```
-
-### Async Tests
-
-```python
-# tests/test_clients.py
-import pytest
-from src.nasa.gistemp import GISTEMPClient
-
-@pytest.mark.asyncio
-async def test_gistemp_fetch():
-    client = GISTEMPClient()
-    data = await client.fetch_global_temperatures(
-        start_year=2020,
-        end_year=2022
-    )
-
-    assert len(data) > 0
-    assert all(hasattr(d, 'year') for d in data)
-    assert all(hasattr(d, 'anomaly') for d in data)
-```
-
-### API Integration Tests
-
-```python
-# tests/test_api.py
-import pytest
 from fastapi.testclient import TestClient
 from backend.app import app
 
 client = TestClient(app)
 
 def test_health():
-    response = client.get("/api/health")
-    assert response.status_code == 200
-    assert response.json()["status"] == "healthy"
-
-def test_compose_minimal():
-    response = client.post("/api/compose", json={
-        "zone": "global",
-        "audio": False,  # Skip audio for speed
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert "id" in data
-    assert "score" in data
-    assert data["score"]["n_bars"] > 0
-
-def test_compose_invalid_zone():
-    response = client.post("/api/compose", json={
-        "zone": "atlantis"
-    })
-    assert response.status_code == 422
-    assert "not found" in response.json()["detail"].lower()
-
-def test_sonify_with_points():
-    response = client.post("/api/sonify", json={
-        "zone_id": "test",
-        "points": [{"lat": 46.5, "lng": 6.5}],
-        "time_period": "2024-03",
-        "duration_s": 10,
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert "audio_data" in data
-    assert "next_time_period" in data
+    r = client.get("/api/health")
+    assert r.status_code == 200 and r.json()["status"] == "ok"
 ```
 
-### Fixtures
-
-```python
-# tests/conftest.py
-import pytest
-import numpy as np
-
-@pytest.fixture
-def sample_intensity_map():
-    """Create sample intensity map for testing."""
-    return np.random.rand(12, 180, 360)
-
-@pytest.fixture
-def sample_compose_request():
-    """Standard compose request for testing."""
-    return {
-        "zone": "switzerland",
-        "start": "2024-01",
-        "end": "2024-06",
-        "audio": False,
-    }
-
-@pytest.fixture
-def mock_gistemp_data():
-    """Mock GISTEMP temperature data."""
-    from dataclasses import dataclass
-
-    @dataclass
-    class TempAnomaly:
-        year: int
-        month: int
-        anomaly: float
-
-    return [
-        TempAnomaly(2020, 1, 1.02),
-        TempAnomaly(2020, 2, 1.15),
-        # ...
-    ]
-```
-
----
-
-## End-to-End Testing
-
-### Setup Playwright
-
-```bash
-npm install -D @playwright/test
-npx playwright install
-```
-
-### E2E Tests
-
-```typescript
-// e2e/sonification.spec.ts
-import { test, expect } from '@playwright/test';
-
-test.describe('Sonification Flow', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5173');
-  });
-
-  test('can play sonification', async ({ page }) => {
-    // Wait for app to load
-    await expect(page.getByRole('main')).toBeVisible();
-
-    // Click play
-    await page.getByRole('button', { name: /play/i }).click();
-
-    // Verify playing state
-    await expect(page.getByRole('button', { name: /pause/i })).toBeVisible();
-
-    // Wait for progress
-    await expect(page.getByRole('slider')).toHaveAttribute('aria-valuenow', /.+/);
-  });
-
-  test('keyboard navigation works', async ({ page }) => {
-    // Tab to play button
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-
-    // Space to play
-    await page.keyboard.press('Space');
-    await expect(page.getByRole('button', { name: /pause/i })).toBeVisible();
-
-    // Arrow to seek
-    await page.keyboard.press('ArrowRight');
-  });
-
-  test('accessibility scan passes', async ({ page }) => {
-    const accessibilityScanResults = await page.accessibility.snapshot();
-    // Custom assertions on accessibility tree
-  });
-});
-```
-
-### Running E2E Tests
-
-```bash
-# Run all E2E tests
-npx playwright test
-
-# Run with UI
-npx playwright test --ui
-
-# Run specific test
-npx playwright test sonification.spec.ts
-```
-
----
-
-## Coverage
-
-### Frontend Coverage
-
-```bash
-npm run test -- --coverage
-```
-
-Coverage report in `coverage/` directory.
-
-### Backend Coverage
-
-```bash
-pytest --cov=backend --cov-report=html
-```
-
-Coverage report in `htmlcov/` directory.
-
-### Coverage Thresholds
-
-```javascript
-// vitest.config.ts
-export default defineConfig({
-  test: {
-    coverage: {
-      provider: 'v8',
-      thresholds: {
-        statements: 80,
-        branches: 80,
-        functions: 80,
-        lines: 80,
-      },
-    },
-  },
-});
-```
-
----
-
-## CI/CD Integration
-
-### GitHub Actions
-
-```yaml
-# .github/workflows/test.yml
-name: Tests
-
-on: [push, pull_request]
-
-jobs:
-  frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run test -- --coverage
-      - run: npm run test:a11y
-
-  backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: pip install -r requirements.txt
-      - run: pytest --cov
-```
+The `/api/zones/zone-data` contract the webapp uses (request, `next_time_period`, errors) is documented in `sonification/backend/FRONTEND_API.md`.
 
 ---
 
@@ -550,43 +184,19 @@ jobs:
 
 ```typescript
 // Describe what, not how
-describe('AudioPlayer', () => {
-  it('pauses playback when pause button is clicked', () => {});
-  it('displays current year during playback', () => {});
-  it('announces state changes to screen readers', () => {});
+describe('AudioPlayerEnhanced accessibility', () => {
+  it('blocked Play stays focusable and says why when activated', () => {});
+  it('says "end of data" when finished', () => {});
 });
 ```
 
-### Arrange-Act-Assert
+Remember the `accessibility` keyword for tests that should run with `npm run test:a11y`.
 
-```typescript
-it('updates progress when seeking', () => {
-  // Arrange
-  const { result } = renderHook(() => useSonification(mockData));
+### Isolation
 
-  // Act
-  act(() => {
-    result.current.seek(50);
-  });
-
-  // Assert
-  expect(result.current.progress).toBe(50);
-});
-```
-
-### Test Isolation
-
-```typescript
-// Each test should be independent
-beforeEach(() => {
-  // Reset state
-  vi.clearAllMocks();
-});
-
-afterEach(() => {
-  // Cleanup
-});
-```
+- Never call the real backend: inject `fetchChunk` or mock `fetch`
+- Reset shared mocks between tests, for example `MockAudioContext.sources.length = 0` in `beforeEach`
+- Wrap state updates in `act(...)`; some legacy tests still print `act` warnings
 
 ---
 

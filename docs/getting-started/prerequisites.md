@@ -8,7 +8,7 @@ Required tools and versions for developing Earth Information Jukebox.
 
 ### Node.js
 
-**Version**: 18.x or higher (LTS recommended)
+**Version**: 20.x or higher; 22 LTS recommended (the webapp Docker image builds with `node:22-alpine`)
 
 === "macOS (Homebrew)"
 
@@ -25,28 +25,32 @@ Required tools and versions for developing Earth Information Jukebox.
 === "Ubuntu/Debian"
 
     ```bash
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
     sudo apt-get install -y nodejs
     ```
 
 === "nvm (any platform)"
 
     ```bash
-    nvm install 20
-    nvm use 20
+    nvm install 22
+    nvm use 22
     ```
 
 Verify installation:
 ```bash
-node --version  # Should be v18.x or higher
-npm --version   # Should be v9.x or higher
+node --version  # Should be v20.x or higher
+npm --version
 ```
 
 ---
 
 ### Python
 
-**Version**: 3.10 or higher
+**Version**: 3.12 recommended (the backend Docker image uses `python:3.12-slim`)
+
+!!! note
+    The Docker image is the only tested setup. Other versions may lack pre-built wheels for some packages
+    (e.g. `tinysoundfont`), which then need a C compiler.
 
 === "macOS (Homebrew)"
 
@@ -66,7 +70,7 @@ npm --version   # Should be v9.x or higher
 
 Verify installation:
 ```bash
-python3 --version  # Should be 3.10+
+python3 --version  # 3.12 recommended
 pip3 --version
 ```
 
@@ -74,7 +78,8 @@ pip3 --version
 
 ### Docker (Optional but Recommended)
 
-Docker simplifies running all services together.
+Docker runs the whole stack (webapp + backend + data) with one command, see [Quick Start](quickstart.md).
+You need the Compose v2 plugin (`docker compose`).
 
 === "macOS"
 
@@ -126,11 +131,10 @@ git --version
 
 ---
 
-## Optional Tools
+### FFmpeg (backend, outside Docker)
 
-### FFmpeg
-
-Required for some audio processing features.
+The backend encodes the audio chunks to MP3 with `ffmpeg`; without it on the `PATH` it falls back to WAV
+(`GET /api/health` reports `mp3_encoding: false`). Not needed with Docker: the backend image includes it.
 
 === "macOS"
 
@@ -152,14 +156,31 @@ Required for some audio processing features.
 
 ---
 
+### Disk Space
+
+The `datasets` repository holds ~6.3 GB of monthly maps (`datasets/data`), and the backend writes the converted
+datasets to its cache. Plan for at least 10 GB free; the Docker images add ~1 GB.
+
+---
+
+## Optional Tools
+
+### MkDocs (documentation)
+
+```bash
+pip install mkdocs-material
+cd documentation && mkdocs serve      # http://127.0.0.1:8001 (port 8000 is the API)
+```
+
+---
+
 ### IDE Recommendations
 
 #### VS Code
 
 Recommended extensions:
 
-- **ESLint** - JavaScript/TypeScript linting
-- **Prettier** - Code formatting
+- **ESLint** - JavaScript/TypeScript linting (the webapp uses ESLint 9 with `jsx-a11y`)
 - **Python** - Python language support
 - **Pylance** - Python IntelliSense
 - **GitLens** - Git integration
@@ -168,7 +189,6 @@ Recommended extensions:
 ```bash
 # Install extensions via command line
 code --install-extension dbaeumer.vscode-eslint
-code --install-extension esbenp.prettier-vscode
 code --install-extension ms-python.python
 code --install-extension ms-python.vscode-pylance
 ```
@@ -183,10 +203,10 @@ JetBrains IDEs work well with both Python and TypeScript projects.
 
 | Tool | Minimum Version | Recommended |
 |------|-----------------|-------------|
-| Node.js | 18.x | 20.x LTS |
-| npm | 9.x | 10.x |
-| Python | 3.10 | 3.12 |
-| Docker | 24.x | Latest |
+| Node.js | 20.x | 22.x LTS |
+| Python | 3.12 (tested) | 3.12 |
+| FFmpeg | any | Latest |
+| Docker + Compose v2 | Compose 2.x | Latest |
 | Git | 2.x | Latest |
 
 ---
@@ -226,6 +246,13 @@ if command -v pip3 &> /dev/null; then
     echo "✓ pip: $(pip3 --version | cut -d' ' -f2)"
 else
     echo "✗ pip: Not installed"
+fi
+
+# FFmpeg
+if command -v ffmpeg &> /dev/null; then
+    echo "✓ FFmpeg: $(ffmpeg -version | head -1 | cut -d' ' -f3)"
+else
+    echo "○ FFmpeg: Not installed (needed for MP3 outside Docker)"
 fi
 
 # Docker

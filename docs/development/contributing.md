@@ -6,36 +6,53 @@ Thank you for your interest in contributing to Earth Information Jukebox!
 
 ## Getting Started
 
-### 1. Fork the Repository
+### 1. Get Access to the Repository
 
-Fork the repository you want to contribute to:
+The project is split into several repositories in the
+[organization](https://github.com/The-Earth-Information-Jukebox-HEIG-VD):
 
-- [webapp](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/webapp)
-- [sonification](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/sonification)
-- [documentation](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/documentation)
+| Repository | Content | Visibility |
+|------------|---------|------------|
+| [webapp](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/webapp) | React frontend | private |
+| [sonification](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/sonification) | FastAPI backend + music engine | private |
+| [datasets](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/datasets) | Pre-processed monthly maps | private |
+| [data_processing](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/data_processing) | Dataset extraction scripts | private |
+| [deployment](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/deployment) | Docker Compose orchestration | private |
+| [documentation](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/documentation) | This site | public |
 
-### 2. Clone Your Fork
+Team members push to the organization's repositories directly. External contributors can fork the public
+`documentation` repository (and the others once they are made public) and open a pull request.
+
+### 2. Clone the Repository
 
 ```bash
-git clone git@github.com:YOUR_USERNAME/webapp.git
+git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/webapp.git
 cd webapp
 ```
+
+Clone the repositories side by side: the webapp, the backend and the Docker setup reference their siblings
+(`../datasets/data`, `../webapp`, `../sonification`).
 
 ### 3. Set Up Development Environment
 
 Follow the [Development Setup Guide](../getting-started/development.md).
 
-### 4. Create a Branch
+### 4. Create a Branch (for larger changes)
 
 ```bash
 git checkout -b feature/your-feature-name
 ```
+
+So far all work has been committed directly to `main`. For anything larger or risky, prefer a short-lived branch
+and a pull request.
 
 ---
 
 ## Development Workflow
 
 ### Branch Naming
+
+Suggested prefixes (no branch exists yet on the remotes besides `main`):
 
 | Prefix | Purpose |
 |--------|---------|
@@ -53,42 +70,28 @@ Examples:
 
 ### Commit Messages
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
+The convention used in the code repositories: a short subject in the imperative, starting with a capital letter,
+saying what the change does (no type prefix), and an optional body explaining why.
 
 ```
-<type>(<scope>): <description>
+<Imperative summary of the change>
 
-[optional body]
+[optional body: why, and anything a reviewer should know]
 
-[optional footer]
+[optional footer, e.g. Closes #42]
 ```
 
-Types:
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation
-- `style`: Formatting (no code change)
-- `refactor`: Code restructuring
-- `test`: Adding tests
-- `chore`: Maintenance
-
-Examples:
+Examples from the history:
 
 ```
-feat(audio): add volume control slider
-
-Adds a range input for controlling playback volume.
-The volume state is persisted in localStorage.
-
-Closes #42
+Add Docker support for containerized deployment
+Connect webapp to the sonification backend and draw dataset dots on the globe
+Split precipitation into rain and snow (monthly, 2000-2026)
+Play each variable from its own dataset, lined up by date
 ```
 
-```
-fix(a11y): ensure focus visible on all buttons
-
-Buttons were missing focus indicators after
-CSS refactor. Added explicit :focus-visible styles.
-```
+The `documentation` repository uses a `docs:` prefix (e.g. `docs: update team page with roles and alphabetical ordering`).
+Avoid catch-all commits such as `wip: ...`: one change per commit.
 
 ---
 
@@ -97,58 +100,47 @@ CSS refactor. Added explicit :focus-visible styles.
 ### TypeScript/JavaScript
 
 - Use TypeScript for all new code
-- Follow ESLint rules (run `npm run lint`)
-- Use Prettier for formatting
-- Prefer functional components and hooks
-- Export types alongside implementations
+- Follow ESLint rules (run `npm run lint`; `typescript-eslint`, `react-hooks`, `jsx-a11y`, zero warnings allowed)
+- No formatter is configured in the repository; keep the style of the surrounding code
+- Prefer function components and hooks; keep playback state outside React (see `audio/ChunkPlayer.ts`)
+- API types live in `services/sonificationApi.ts` and mirror `sonification/backend/FRONTEND_API.md`
 
 ```typescript
 // Good
-export interface AudioPlayerProps {
+// From src/components/AudioTranscript.tsx (abridged)
+interface AudioTranscriptProps {
   data: ClimateDataPoint[];
-  onProgress?: (index: number) => void;
+  unit: string;
+  datasetName: string;
 }
 
-export const AudioPlayer: FC<AudioPlayerProps> = ({ data, onProgress }) => {
+export function AudioTranscript({ data, unit, datasetName }: AudioTranscriptProps) {
   // ...
-};
+}
 ```
 
 ### Python
 
 - Follow PEP 8
-- Use type hints
-- Document public functions with docstrings
-- Use async/await for I/O operations
+- Use type hints (`from __future__ import annotations` is used throughout)
+- Document modules and public functions with docstrings (the modules start with a usage docstring)
+- Configuration comes from `JUKEBOX_*` environment variables; document new ones in `backend/API.md`
+- Keep the frontend contract (`backend/FRONTEND_API.md`) and `webapp/src/services/sonificationApi.ts` in sync
 
 ```python
-async def fetch_data(
-    start_year: int,
-    end_year: int,
-    *,
-    cache: bool = True
-) -> list[DataPoint]:
-    """
-    Fetch climate data for the given year range.
+# Illustrative, after backend/app.py
+def pick_dataset(variables: list[str] | None = None, start: str | None = None) -> str | None:
+    """The dataset for a request that names none.
 
-    Args:
-        start_year: First year to fetch
-        end_year: Last year to fetch (inclusive)
-        cache: Whether to use cached data
-
-    Returns:
-        List of data points
-
-    Raises:
-        ValueError: If start_year > end_year
+    It must have every requested variable; among those, prefer one whose dates cover `start`.
     """
     ...
 ```
 
 ### CSS
 
-- Use CSS Modules for component styles
-- Use CSS custom properties for theming
+- One plain `.css` file per component (e.g. `AudioPlayer.css`), no CSS Modules
+- Use the CSS custom properties from `src/styles/variables.css` for theming
 - Mobile-first responsive design
 - Ensure focus indicators on all interactive elements
 
@@ -208,27 +200,26 @@ See [Accessibility Documentation](../user-guide/accessibility.md) for details.
 
 ### Frontend
 
-- Unit tests for utilities and hooks
-- Component tests for UI components
-- Accessibility tests for all components
-- Aim for 80% coverage
+- Unit tests for utilities and hooks (Vitest, files next to the code: `*.test.ts(x)`)
+- Component tests for UI components (Testing Library)
+- Accessibility tests (`jest-axe`) for components; name them so they match "accessibility" (`npm run test:a11y`)
 
 ```bash
-npm run test
+npm run test -- --run
 npm run test:a11y
-npm run test -- --coverage
 ```
 
 ### Backend
 
-- Unit tests for data processing
-- Integration tests for API endpoints
-- Aim for 80% coverage
+- Unit tests for data processing (`backend/test_prepare_data.py`, `simulation/test_build_monthly_dataset.py`)
+- Integration tests for API endpoints (`backend/test_api.py`, FastAPI `TestClient`)
 
 ```bash
-pytest
-pytest --cov
+python -m pytest backend simulation -q
 ```
+
+!!! note
+    No coverage tooling is installed (`@vitest/coverage-v8`, `pytest-cov`), so there is no coverage target.
 
 ---
 
@@ -241,9 +232,10 @@ pytest --cov
 git fetch origin
 git rebase origin/main
 
-# Run tests
+# Run checks (webapp)
 npm run lint
-npm run test
+npx tsc --noEmit
+npm run test -- --run
 
 # Commit changes
 git add .
@@ -283,7 +275,7 @@ Closes #123
 
 ### 4. Review Process
 
-1. Automated checks run (lint, tests, build)
+1. Run the checks locally: there is no CI test workflow (see [CI/CD](../deployment/ci-cd.md))
 2. Team member reviews code
 3. Address feedback
 4. PR is merged when approved
@@ -313,11 +305,14 @@ Include:
 | Label | Description |
 |-------|-------------|
 | `bug` | Something isn't working |
-| `feature` | New feature request |
-| `accessibility` | Accessibility improvement |
-| `documentation` | Documentation update |
+| `enhancement` | New feature or request |
+| `accessibility` | Barrier affecting people with disabilities |
+| `documentation` | Improvements or additions to documentation |
+| `question` | Further information is requested |
 | `good first issue` | Good for newcomers |
-| `help wanted` | Extra attention needed |
+| `help wanted` | Extra attention is needed |
+
+GitHub's other default labels (`duplicate`, `invalid`, `wontfix`) are also available.
 
 ---
 
@@ -326,14 +321,16 @@ Include:
 ### Running Locally
 
 ```bash
-# Start both frontend and backend
+# Start everything in Docker (webapp on http://localhost)
 cd deployment
-docker compose up
+./scripts/run-local.sh
 
-# Or run separately
+# Or run separately (two terminals)
+cd sonification && JUKEBOX_MERGE_DATASETS=1 uvicorn backend.app:app --reload --port 8000
 cd webapp && npm run dev
-cd sonification/backend && uvicorn backend.app:app --reload
 ```
+
+See [Development Setup](../getting-started/development.md) for the data preparation step.
 
 ### Debugging
 
@@ -347,7 +344,7 @@ cd sonification/backend && uvicorn backend.app:app --reload
 - Preview documentation locally:
   ```bash
   cd documentation
-  mkdocs serve
+  mkdocs serve      # http://127.0.0.1:8001
   ```
 
 ---
@@ -380,9 +377,9 @@ Project maintainers will take appropriate action for any unacceptable behavior.
 
 ## Getting Help
 
-- **Questions**: Open a discussion on GitHub
+- **Questions**: Open an issue with the `question` label (GitHub Discussions are not enabled)
 - **Bugs**: Open an issue with the `bug` label
-- **Features**: Open an issue with the `feature` label
+- **Features**: Open an issue with the `enhancement` label
 
 ---
 

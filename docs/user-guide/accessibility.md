@@ -8,7 +8,10 @@ Earth Information Jukebox is designed to be accessible to all users, including t
 
 This project exists to make climate data accessible to the **285 million visually impaired people** worldwide. Accessibility is not an afterthought - it's our core mission.
 
-We follow **WCAG 2.1 AA** guidelines and actively test with assistive technologies.
+We target **WCAG 2.1 AA** and check the interface with automated tools (axe-core, jest-axe, ESLint `jsx-a11y`) and manual keyboard and screen-reader testing.
+
+!!! note
+    Some items below are still in progress. Features that are not yet available in the interface are marked as such.
 
 ---
 
@@ -16,32 +19,41 @@ We follow **WCAG 2.1 AA** guidelines and actively test with assistive technologi
 
 ### Full Keyboard Access
 
-Every feature is accessible via keyboard. No mouse required.
+The player, track panel, zone selection (list view) and language menu can all be used with the keyboard.
 
 | Key | Action |
 |-----|--------|
 | `Tab` | Move to next interactive element |
 | `Shift + Tab` | Move to previous element |
-| `Enter` / `Space` | Activate buttons and links |
-| `Arrow keys` | Navigate within components |
-| `Escape` | Close modals and dialogs |
+| `Enter` / `Space` | Activate the focused button or link |
+| `Arrow keys` | Move within sliders and menus |
+| `Escape` | Close the track panel and the language menu; leave the globe and return to zone selection |
+
+A **Skip to content** link is the first focusable element on the page.
 
 ### Playback Shortcuts
 
+These shortcuts work anywhere on the page, except while focus is in a text field, a slider or a dialog, or when a modifier key (`Ctrl`, `Cmd`, `Alt`) is held.
+
 | Key | Action |
 |-----|--------|
-| `Space` | Play / Pause |
-| `←` Arrow | Seek backward 5% |
-| `→` Arrow | Seek forward 5% |
+| `Space` | Play / Pause (when a button is focused, `Space` activates that button instead) |
+| `←` Arrow | Seek backward 2% |
+| `→` Arrow | Seek forward 2% |
 | `Home` | Jump to beginning |
 | `End` | Jump to end |
-| `↑` Arrow | Volume up |
-| `↓` Arrow | Volume down |
 | `M` | Mute / Unmute |
+
+The timeline slider (focused) supports `←`, `→`, `Home` and `End` with the same 2% step. The volume slider is a native range input: use `←` / `→` (or `↑` / `↓`) for 5% steps once it is focused. There are also skip backward / forward buttons (10% each).
+
+### Play button when no zone is selected
+
+Until a zone is selected (and at least one track is enabled), the Play button is `aria-disabled` rather than removed from the tab order. A hint explains why (for example "select a zone first") and is linked to the button with `aria-describedby`. Activating Play while blocked announces the same hint through a live region. Pause is never disabled.
 
 ### Help
 
-Press `?` at any time to see all keyboard shortcuts.
+!!! note
+    A keyboard shortcuts dialog (`KeyboardShortcuts` component, opened with `?`) exists in the code but is not yet mounted in the app, so `?` currently does nothing. Its text also still says "5%" for seeking; the real step is 2%.
 
 ---
 
@@ -49,26 +61,31 @@ Press `?` at any time to see all keyboard shortcuts.
 
 ### Tested With
 
-- **VoiceOver** (macOS/iOS)
+- **VoiceOver** (macOS)
 - **NVDA** (Windows)
-- **JAWS** (Windows)
+
+Other screen readers should work but are not regularly tested.
 
 ### What Screen Readers Announce
 
-- Page title and current section
-- All interactive elements with their purpose
-- Current playback state (playing, paused, stopped)
-- Data values as they play
-- Status changes via live regions
+- Skip link and page structure (landmarks)
+- All interactive elements with an accessible name; icon-only buttons have `aria-label`, icons are `aria-hidden`
+- Play / pause state: the button label switches between "Play" and "Pause"
+- Timeline and volume as sliders with `aria-valuenow` and a spoken `aria-valuetext` (year, volume percent)
+- Selected zone ("zone selected")
+- Loading, error and end-of-data messages
+- Data values while playing, for example "now playing: ... year" (see [Current Value Announcements](#current-value-announcements))
+
+Announcements are translated (English, French, German) and the values are phrased to be read aloud, not just displayed.
 
 ### Landmarks
 
 The page uses semantic landmarks:
 
 ```
-<header> - Page header with title and navigation
-<main>   - Primary content area
-<nav>    - Navigation menus
+<header> - Page header (banner)
+<nav>    - Main navigation
+<main>   - Primary content area (id="main-content", target of the skip link)
 <footer> - Page footer
 ```
 
@@ -82,33 +99,10 @@ Navigate by landmark using your screen reader:
 
 ## Audio Transcript
 
-For users who cannot hear the sonification, we provide a complete **Audio Transcript**:
+!!! note
+    An `AudioTranscript` component (explanation of the sonification mapping) exists in the code but is **not yet mounted** in the app. There is currently no "Audio Transcript" button and no `T` shortcut. Until it is wired in, the text alternatives are the live announcements of the current value and the visible data on the globe.
 
-### What's Included
-
-1. **Explanation of the sonification**:
-   - How data maps to sound
-   - What each instrument represents
-   - Time period covered
-
-2. **Complete data table**:
-   ```
-   Year    | Temperature | Frequency | Trend
-   --------|-------------|-----------|-------
-   2020    | +1.02°C     | 680 Hz    | ▲
-   2021    | +0.85°C     | 620 Hz    | ▼
-   2022    | +0.89°C     | 635 Hz    | ▲
-   2023    | +1.17°C     | 720 Hz    | ▲
-   2024    | +1.54°C     | 880 Hz    | ▲
-   ```
-
-3. **Summary narrative**:
-   > "This sonification covers global temperature anomalies from 2020 to 2024. The overall trend is warming, with 2024 reaching the highest anomaly of +1.54°C, represented by the highest pitch."
-
-### Accessing the Transcript
-
-1. Click the **"Audio Transcript"** button below the player
-2. Or press `T` to toggle the transcript panel
+The planned transcript explains how data maps to sound (warmer values sound higher, cooler lower), what each instrument represents and the time period covered.
 
 ---
 
@@ -116,47 +110,48 @@ For users who cannot hear the sonification, we provide a complete **Audio Transc
 
 ### Color Contrast
 
-All text meets WCAG AA requirements:
+The design targets WCAG AA ratios:
 
 - **Normal text**: 4.5:1 minimum contrast ratio
 - **Large text**: 3:1 minimum contrast ratio
 - **UI components**: 3:1 minimum contrast ratio
 
+A **high contrast** theme (black background, white text, 2px borders) and a **color-blind safe** palette with ▲ / ▼ warm / cool markers exist as CSS modes, but there is no settings menu to switch them on yet (see [Accessibility Settings](#settings-for-accessibility)). Contrast has not been formally audited for every screen.
+
 ### Not Relying on Color Alone
 
-Information is never conveyed by color alone:
-
-- Icons accompany color indicators
-- Text labels supplement color coding
-- Patterns and shapes provide additional distinction
+- The globe legend and track panel use text labels next to colors
+- Track availability and real / simulated data are shown as text badges
+- Warm / cool markers (▲ / ▼) are available in color-blind mode
 
 ### Focus Indicators
 
-All focusable elements have visible focus indicators:
+All focusable elements get a visible focus ring:
 
 ```css
 :focus-visible {
-  outline: 3px solid #2563eb;
+  outline: 3px solid var(--color-primary); /* #1a73e8 */
   outline-offset: 2px;
 }
 ```
 
+In high contrast mode the ring is a 4px yellow outline. On touch devices (`pointer: coarse`) buttons and inputs have a 44x44px minimum target size.
+
 ### Reduced Motion
 
-Respects the `prefers-reduced-motion` system setting:
+Animations are switched off when the system setting `prefers-reduced-motion: reduce` is on (the app also reads it on load and follows changes), and the globe respects it too:
 
 ```css
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+.reduced-motion,
+.reduced-motion * {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
 }
 ```
 
 To enable:
-- **macOS**: System Preferences → Accessibility → Display → Reduce motion
-- **Windows**: Settings → Ease of Access → Display → Show animations
+- **macOS**: System Settings → Accessibility → Display → Reduce motion
+- **Windows**: Settings → Accessibility → Visual effects → Animation effects
 - **Browser**: Developer tools → Rendering → prefers-reduced-motion
 
 ---
@@ -165,15 +160,19 @@ To enable:
 
 ### Volume Control
 
-- Adjustable volume slider
-- Keyboard shortcuts for volume (↑ ↓ M)
-- Remembers your volume preference
+- Volume slider with a spoken value ("volume ... percent") and a mute button
+- `M` toggles mute from anywhere
+- The volume is not saved between visits
 
 ### Playback Control
 
-- Play, pause, stop controls
-- Seekable progress bar
-- Adjustable playback speed
+- Play / pause button, skip backward / forward buttons
+- Seekable timeline slider (keyboard and mouse), also `Home` / `End`
+- There is no stop button, playback speed control or per-track volume. The server returns a single mixed file, so only the master volume can be changed
+
+### How Audio Is Delivered
+
+The sonification is composed by the backend and played as 30-second MP3 chunks. A short loading message ("loading ...") is shown while a chunk is requested; it is spoken only the first time, or when loading takes more than one second. If the backend is unreachable, an error message (`role="alert"`) appears with a **Retry** button. After activating Retry, keyboard focus moves to the Play button so it is not lost.
 
 ### No Autoplay
 
@@ -181,56 +180,42 @@ Audio never plays automatically. You must explicitly start playback, giving you 
 
 ---
 
-## Form Accessibility
+## Controls and Forms
 
-### Labeled Inputs
+### Labeled Controls
 
-All form inputs have associated labels:
+Controls have accessible names (visible label or `aria-label`), including the volume slider, the timeline, the track checkboxes and the zone type toggle buttons (`aria-pressed`).
 
-```html
-<label for="zone-select">Select Region</label>
-<select id="zone-select">...</select>
-```
+### Dialogs and Panels
+
+The track panel is a modal (`aria-modal="true"`, closes with `Escape`, focus moves to its close button). The shortcuts help dialog, once mounted, traps focus. While a dialog is open, playback shortcuts are disabled.
 
 ### Error Messages
 
-Form errors are:
-- Clearly described in text
-- Associated with the relevant input
-- Announced by screen readers
-
-### Instructions
-
-Clear instructions are provided before form inputs.
+Errors (backend unavailable, track list failed, dataset loading failed) are shown as text and announced (`role="alert"`). Unavailable tracks are disabled with the reason displayed.
 
 ---
 
 ## Data Visualization Accessibility
 
-### Charts and Graphs
+### Globe and List View
 
-Visual charts include:
+The globe canvas has a text description (`role="img"` with a label), and the overlay controls stay reachable. Zones can also be chosen from a **list view**, which is fully keyboard operable; use the view toggle to switch.
 
-1. **Hidden data tables** for screen readers:
-   ```html
-   <table class="sr-only" aria-label="Temperature data table">
-     ...
-   </table>
-   ```
-
-2. **Text descriptions** of trends and patterns
-
-3. **Keyboard navigation** through data points
+!!! note
+    There is no hidden data table for the dots drawn on the globe yet; the current value announcement is the non-visual alternative.
 
 ### Current Value Announcements
 
-As the sonification plays, the current data value is announced via an ARIA live region:
+While playing, the current value is announced through a persistent `aria-live="polite"` region (it stays in the page so that updates are reliably spoken):
 
 ```html
-<div aria-live="polite" aria-atomic="true">
-  Now playing: 2023, Temperature anomaly: +1.17°C
+<div role="status" aria-live="polite" aria-atomic="true" class="sr-only">
+  Now playing: <value with units>, <year>
 </div>
 ```
+
+When several tracks are enabled, the value is prefixed by the main track's name. Anomalies are phrased in words ("above" / "below" the baseline) rather than symbols so they read well aloud.
 
 ---
 
@@ -241,15 +226,21 @@ As the sonification plays, the current data value is announced via an ARIA live 
 We regularly test with:
 
 1. **Keyboard only**: Navigate entire app without mouse
-2. **Screen readers**: VoiceOver, NVDA, JAWS
-3. **Zoom**: Page works at 200% zoom
-4. **Color contrast**: Verified with browser tools
+2. **Screen readers**: VoiceOver, NVDA
+3. **Zoom** and **color contrast**: checked with browser tools
 
 ### Automated Testing
 
-- **axe-core** checks run during development
-- **jest-axe** tests in our test suite
-- **ESLint jsx-a11y** rules in linting
+- **axe-core** (`@axe-core/react`) logs violations to the browser console in development
+- **jest-axe** checks in the component tests (for example the player)
+- **ESLint** with the `jsx-a11y` recommended rules (`npm run lint`)
+
+```bash
+cd webapp
+npm run lint        # includes jsx-a11y
+npm run test        # all tests
+npm run test:a11y   # tests whose name contains "accessibility"
+```
 
 ### How to Report Issues
 
@@ -264,53 +255,42 @@ Found an accessibility barrier? Please help us fix it:
 
 ---
 
-## WCAG 2.1 AA Compliance
+## WCAG 2.1 AA Status
+
+Work in progress, not a certified conformance claim.
 
 ### Perceivable
 
-- [x] Text alternatives for non-text content
-- [x] Captions and transcripts for audio
-- [x] Content adaptable (semantic HTML)
-- [x] Distinguishable (color contrast, resize)
+- [x] Text alternatives for icons and the globe canvas
+- [ ] Transcript for the audio (component written, not yet mounted)
+- [x] Content adaptable (semantic HTML, landmarks)
+- [ ] Distinguishable (AA contrast targeted, not fully audited)
 
 ### Operable
 
 - [x] Keyboard accessible
-- [x] Enough time (pause, stop, adjust)
-- [x] No seizure-inducing content
-- [x] Navigable (skip links, focus order)
+- [x] Pause available at all times; no autoplay
+- [x] Visible focus; skip link
+- [x] Reduced motion respected
 
 ### Understandable
 
-- [x] Readable (language set)
-- [x] Predictable (consistent navigation)
-- [x] Input assistance (error identification)
+- [x] Interface available in English, French and German
+- [x] Error messages in text, announced to screen readers
+- [ ] Page language attribute is `en` in `index.html`; check it follows the selected language
 
 ### Robust
 
-- [x] Compatible (valid HTML, ARIA)
+- [x] Native elements and ARIA checked by axe and `jsx-a11y`
 
 ---
 
 ## Settings for Accessibility
 
-Access via the Settings menu:
+The app stores accessibility preferences in the browser (`localStorage`) and applies them as CSS classes on the page: **high contrast**, **dyslexia-friendly font**, **color-blind mode** and **reduced motion** (initialised from the system setting).
 
-### Visual Settings
-
-- **High Contrast Mode**: Increases contrast for better visibility
-- **Large Text**: Increases base font size
-- **Reduce Motion**: Disables animations
-
-### Audio Settings
-
-- **Slower Playback**: Reduces tempo for easier comprehension
-- **Volume Normalization**: Evens out loud and quiet parts
-
-### Navigation Settings
-
-- **Focus Mode**: Highlights current focus more prominently
-- **Simplified Interface**: Hides non-essential elements
+!!! note
+    These options exist in the code and translations, but there is currently **no settings menu** in the interface to change them. Use your operating system's reduced motion setting. Slower playback, volume normalization, focus mode and simplified interface are not implemented.
 
 ---
 

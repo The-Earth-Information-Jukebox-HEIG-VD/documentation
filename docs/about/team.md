@@ -2,7 +2,7 @@
 
 ## HEIG-VD Team
 
-We are a team of students and developers from [HEIG-VD](https://heig-vd.ch/) (Haute Ecole d'Ingenierie et de Gestion du Canton de Vaud), participating in the NASA Space Apps Challenge 2026.
+We are a team of students and developers from [HEIG-VD](https://heig-vd.ch/) (Haute Ecole d'Ingénierie et de Gestion du Canton de Vaud), participating in the NASA Space Apps Challenge 2026.
 
 ---
 

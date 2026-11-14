@@ -8,35 +8,46 @@ Future plans and features for Earth Information Jukebox.
 
 ### Completed (v1.0)
 
-- [x] Core sonification engine
-- [x] GISTEMP temperature data integration
-- [x] POWER API regional data
-- [x] Web Audio playback
-- [x] Basic UI with playback controls
+- [x] Core sonification engine (server-side composition, MP3 rendering)
+- [x] Common 0.25° grid (720×1440) for all datasets, one `.npy` per month
+- [x] GISTEMP temperature anomaly data (1880-2025)
+- [x] GPM IMERG rain and snow (2000-2026)
+- [x] ISS LIS lightning (2017-2023) and Earth at Night lights (2012-2023), extracted from NASA SVS
+- [x] CO2 maps (2002-2022)
+- [x] Multiple instruments (orchestra), datasets lined up by date
+- [x] 30-second chunked playback in the browser (Web Audio API), with seamless chaining and prefetch
+- [x] 3D globe and list view for zone selection (continents, countries, oceans, seas)
+- [x] Raw dataset values drawn on the globe during playback
+- [x] Track selection from `GET /api/instruments`
+- [x] Key climate moments on the timeline
+- [x] Interface in English, French and German
 - [x] Keyboard navigation
-- [x] Screen reader support
-- [x] Audio transcript
-- [x] Docker deployment
+- [x] Screen reader support (live announcements)
+- [x] Docker images and Docker Compose deployment (local build)
 - [x] API documentation
-- [x] Multiple instruments (orchestra)
 
 ---
 
 ## Short Term (Next Release)
 
+### Deployment
+
+- [ ] Publish the Docker images to GHCR (the compose file already references them)
+
 ### Enhanced Data Sources
 
-- [ ] SVS visualization frame extraction
+- [ ] Sonify the wildfire dataset (MODIS 2002-2026, already in the `datasets` repository)
+- [ ] Data for the engine's dust (Flute) and smoke (French Horns) voices
 - [ ] Real-time data updates
 - [ ] More climate variables (sea level, ice extent)
-- [ ] Higher resolution data (0.5° grid)
 
 ### Improved Audio
 
 - [ ] VSCO samples by default
 - [ ] More instrument options
 - [ ] Custom instrument mapping
-- [ ] Audio effects (reverb, spatial)
+- [x] Concert-hall reverb in the rendering
+- [ ] Spatial audio
 - [ ] Variable playback speed
 
 ### User Experience
@@ -44,6 +55,8 @@ Future plans and features for Earth Information Jukebox.
 - [ ] Save/load compositions
 - [ ] Share compositions via URL
 - [ ] User accounts and preferences
+- [ ] Show the audio transcript (the `AudioTranscript` component exists but is not mounted)
+- [ ] Keyboard shortcuts help dialog on `?` (the `KeyboardShortcuts` component exists but is not mounted)
 - [ ] Guided tours for new users
 - [ ] Mobile-optimized interface
 
@@ -53,7 +66,7 @@ Future plans and features for Earth Information Jukebox.
 
 ### Advanced Sonification
 
-- [ ] Multi-variable compositions (hear multiple variables together)
+- [x] Multi-variable compositions (hear multiple variables together)
 - [ ] Comparison mode (two regions or time periods side-by-side)
 - [ ] Custom mapping configurations
 - [ ] Time-stretching (speed up/slow down without pitch change)
@@ -61,8 +74,8 @@ Future plans and features for Earth Information Jukebox.
 
 ### Visualization
 
-- [ ] Synchronized map visualization
-- [ ] Timeline with data markers
+- [x] Synchronized map visualization (the globe draws the zone's data month by month with the music)
+- [x] Timeline with key climate moments
 - [ ] Interactive data chart
 - [ ] Visual representation of current pitch
 
@@ -71,7 +84,7 @@ Future plans and features for Earth Information Jukebox.
 - [ ] More screen reader optimizations
 - [ ] Haptic feedback (vibration patterns on mobile)
 - [ ] Audio descriptions of data trends
-- [ ] Multiple language support
+- [x] Multiple language support (EN/FR/DE)
 
 ### Education
 
@@ -120,7 +133,7 @@ Future plans and features for Earth Information Jukebox.
 
 - [ ] WebAssembly audio processing
 - [ ] Service worker for offline support
-- [ ] Progressive loading of large datasets
+- [x] Progressive loading of large datasets (the globe downloads only the rows covering the zone, with HTTP Range requests)
 - [ ] CDN for audio files
 
 ### Infrastructure
@@ -134,7 +147,7 @@ Future plans and features for Earth Information Jukebox.
 
 - [ ] Plugin system for custom instruments
 - [ ] Comprehensive test suite
-- [ ] Automated accessibility testing
+- [x] Automated accessibility checks (jest-axe tests, eslint-plugin-jsx-a11y)
 - [ ] API client libraries (JS, Python)
 
 ---
@@ -147,7 +160,7 @@ We welcome contributions in any of these areas:
 2. **Open an issue** to discuss the approach
 3. **Submit a PR** with your implementation
 
-See the [Contributing Guide](../developer-guide/contributing.md) for details.
+See the [Contributing Guide](../development/contributing.md) for details.
 
 ---
 
@@ -166,8 +179,7 @@ We prioritize features based on:
 
 Have ideas for features? Let us know:
 
-- [GitHub Issues](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/webapp/issues) - Bug reports and feature requests
-- [GitHub Discussions](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/webapp/discussions) - General discussion
+- [GitHub Issues](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/webapp/issues) - Bug reports, feature requests and general discussion
 
 ---
 
