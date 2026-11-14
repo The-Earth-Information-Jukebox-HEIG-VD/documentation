@@ -79,11 +79,66 @@ On first start the backend converts the datasets in the background; wait until `
 
 ## HTTPS and Exposure
 
-The stack does **not** terminate TLS: the webapp's nginx listens on port 80 only. For a public deployment, put a
-reverse proxy with certificates in front of `WEBAPP_PORT` (e.g. a host-level nginx, Caddy or Traefik).
+`docker-compose.prod.yml` puts **Traefik** in front of the stack, with automatic Let's Encrypt certificates:
 
-The backend port (`BACKEND_PORT`, default 8000) is also published on the host. The webapp does not need it (it
-reaches `backend:8000` on the internal `jukebox-net` network); firewall it if the API should not be public.
+| URL | Service |
+|-----|---------|
+| `https://DOMAIN` | webapp |
+| `https://www.DOMAIN` | permanent redirect to `https://DOMAIN` |
+| `https://api.DOMAIN` | backend API (e.g. `https://api.DOMAIN/api/health`) |
+
+- Traefik owns ports 80 and 443; the webapp and the backend publish no host ports. HTTP redirects to HTTPS.
+- Set `DOMAIN` and `ACME_EMAIL` in `.env`. Certificates are stored in `deployment/data/letsencrypt/`.
+- The webapp keeps calling `/api` on its own origin (nginx proxies it to the backend), so the same image works on any
+  domain.
+
+!!! warning "DNS and ports before the first start"
+    Traefik requests the certificates as soon as it starts. `DOMAIN`, `www.DOMAIN` and `api.DOMAIN` must already
+    resolve to the server (A and/or AAAA records; check with `dig +short DOMAIN @1.1.1.1`) and ports 80/443 must be
+    reachable **from the internet**. Let's Encrypt allows only 5 failed validations per name and hour; after that it
+    refuses every request for an hour (`429 rateLimited` in `docker compose logs traefik`). A server behind a
+    network firewall or NAT (e.g. a school VM with a private IPv4) cannot get certificates until the ports are opened.
+
+---
+
+## Small Server (data from a host folder)
+
+The datasets image is a single 6.3 GB layer: pulling it needs about twice that, and `data-init` then copies another
+6.3 GB into the `jukebox-data` volume (~19-23 GB in total). On a small server (1 vCPU, 2 GB RAM, 20 GB disk) add
+`docker-compose.hostdata.yml`: the data is stored once as plain files and mounted read-only into the backend and the
+webapp (~11 GB in total).
+
+| Measured at 1 CPU / 1.5 GB RAM | Result |
+|---|---|
+| First-start data preparation (6 datasets) | 53 s, peak 911 MiB |
+| Backend memory afterwards | ~350 MiB |
+| One 30 s chunk, all six instruments | ~1.7 s (expect 2-4 s on a cloud vCPU) |
+
+```bash
+# Optional on 2 GB RAM: 2 GB swap as a safety margin
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+# Data: clone once and keep only data/ (fires_2002_2026 is used by neither the backend nor the globe)
+git clone --depth 1 git@github.com:The-Earth-Information-Jukebox-HEIG-VD/datasets.git
+mv datasets/data ~/jukebox-data && rm -rf datasets ~/jukebox-data/fires_2002_2026
+```
+
+`.env`:
+
+```bash
+COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml:docker-compose.hostdata.yml
+JUKEBOX_DATA_PATH=/home/ubuntu/jukebox-data   # absolute path
+WEBAPP_VERSION=1.1.0
+SONIFICATION_VERSION=1.1.0
+DOMAIN=example.com
+ACME_EMAIL=admin@example.com
+```
+
+Then `docker compose pull` (the datasets image is not pulled: `data-init` is disabled) and, once DNS points at the
+server, `docker compose up -d --wait`. `DATASETS_VERSION` is not used in this mode: update the data by replacing the
+folder's contents and running `docker compose restart backend`.
 
 ---
 

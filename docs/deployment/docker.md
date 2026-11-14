@@ -68,7 +68,8 @@ Services:
 | `docker-compose.yml` | always | Base stack: `data-init` → `backend` → `webapp`, images from GHCR, volumes `jukebox-data` and `jukebox-cache`, network `jukebox-net` |
 | `docker-compose.override.yml` | automatically with plain `docker compose` | Development tweaks (`JUKEBOX_CORS=*`, commented-out local data mount and debug port) |
 | `docker-compose.local.yml` | `-f docker-compose.yml -f docker-compose.local.yml` | Build images from `../webapp` and `../sonification`, bind-mount `../datasets/data`, disable `data-init` |
-| `docker-compose.prod.yml` | `-f docker-compose.yml -f docker-compose.prod.yml` | Restricted CORS, CPU/memory limits, JSON log rotation |
+| `docker-compose.prod.yml` | `-f docker-compose.yml -f docker-compose.prod.yml` | Traefik with Let's Encrypt on `DOMAIN` / `api.DOMAIN`, no host ports for webapp/backend, restricted CORS, CPU/memory limits, JSON log rotation |
+| `docker-compose.hostdata.yml` | added after `prod` (see [Small Server](production.md#small-server-data-from-a-host-folder)) | Mount the datasets from `JUKEBOX_DATA_PATH` instead of the datasets image; disable `data-init` |
 
 !!! note
     The compose files still carry a top-level `version: "3.9"` key. Compose v2 ignores it and prints an
