@@ -35,8 +35,9 @@ cp .env.example .env
 Then edit `.env`:
 
 ```bash
-TAG=1.0.0                              # pin the release instead of latest
-DATA_TAG=1.0.0
+WEBAPP_VERSION=1.0.0                   # pin each release instead of latest
+SONIFICATION_VERSION=1.0.0
+DATASETS_VERSION=1.0.0
 WEBAPP_PORT=80
 BACKEND_PORT=8000
 JUKEBOX_CORS=https://your-domain.com
@@ -92,8 +93,10 @@ reaches `backend:8000` on the internal `jukebox-net` network); firewall it if th
 
 | Variable | Description |
 |----------|-------------|
-| `TAG` | Version of the `webapp` and `sonification` images |
-| `DATA_TAG` | Version of the `datasets` image |
+| `WEBAPP_VERSION` | Version of the `webapp` image |
+| `SONIFICATION_VERSION` | Version of the `sonification` (backend) image |
+| `DATASETS_VERSION` | Version of the `datasets` image |
+| `TAG` / `DATA_TAG` | Legacy fallbacks (webapp + sonification / datasets), used only when the variables above are unset |
 | `WEBAPP_PORT` | Host port of the webapp (default 80) |
 | `BACKEND_PORT` | Host port of the backend (default 8000) |
 | `JUKEBOX_CORS` | Allowed CORS origins, comma-separated |
@@ -165,7 +168,7 @@ The webapp only starts once the backend is healthy.
 
 ```bash
 git pull                                   # compose file changes
-# bump TAG / DATA_TAG in .env
+# bump WEBAPP_VERSION / SONIFICATION_VERSION / DATASETS_VERSION in .env
 docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```

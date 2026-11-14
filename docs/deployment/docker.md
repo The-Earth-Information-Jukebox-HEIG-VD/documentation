@@ -13,7 +13,7 @@ Deploy Earth Information Jukebox using Docker Compose. Everything lives in the
 - Disk space: the raw datasets are ~6.3 GB (`datasets/data`), the backend image ~1 GB, plus the converted datasets in the cache volume
 
 !!! warning "No images are published yet"
-    `docker-compose.yml` pulls `ghcr.io/the-earth-information-jukebox-heig-vd/{datasets,sonification,webapp}:${TAG:-latest}`,
+    `docker-compose.yml` pulls `ghcr.io/the-earth-information-jukebox-heig-vd/{datasets,sonification,webapp}`, each at its own version (`DATASETS_VERSION`, `SONIFICATION_VERSION`, `WEBAPP_VERSION`; default `latest`),
     but **no image has been pushed to GHCR so far**: the publish workflows only run on `v*` tags and no tag exists yet
     (see [CI/CD](ci-cd.md#releasing-images)). Until a release is cut, a plain `docker compose up` fails at the pull step.
     Use the **local build** below.
@@ -78,9 +78,9 @@ Services:
 
 ```yaml
 services:
-  data-init:     # ghcr.io/.../datasets:${DATA_TAG:-latest}
+  data-init:     # ghcr.io/.../datasets:${DATASETS_VERSION}
     # copies /datasets/. into the jukebox-data volume once (marker file /data/.initialized), then exits
-  backend:       # ghcr.io/.../sonification:${TAG:-latest}
+  backend:       # ghcr.io/.../sonification:${SONIFICATION_VERSION}
     ports: ["${BACKEND_PORT:-8000}:8000"]
     environment:
       - JUKEBOX_DATA_DIR=/app/data
@@ -91,7 +91,7 @@ services:
       - jukebox-cache:/app/cache
     depends_on: data-init (completed successfully)
     healthcheck: curl -f http://localhost:8000/api/health
-  webapp:        # ghcr.io/.../webapp:${TAG:-latest}
+  webapp:        # ghcr.io/.../webapp:${WEBAPP_VERSION}
     ports: ["${WEBAPP_PORT:-80}:80"]
     volumes:
       - jukebox-data:/usr/share/nginx/data:ro   # served at /data/ for the globe
@@ -178,8 +178,10 @@ docker run -p 8000:8000 \
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TAG` | `latest` | Image tag for `webapp` and `sonification` (registry flow) |
-| `DATA_TAG` | `latest` | Image tag for `datasets` (registry flow) |
+| `WEBAPP_VERSION` | `latest` | Version of the `webapp` image (registry flow) |
+| `SONIFICATION_VERSION` | `latest` | Version of the `sonification` image (registry flow) |
+| `DATASETS_VERSION` | `latest` | Version of the `datasets` image (registry flow) |
+| `TAG` / `DATA_TAG` | - | Legacy fallbacks, used only when the variables above are unset |
 | `WEBAPP_PORT` | `80` | Host port of the webapp |
 | `BACKEND_PORT` | `8000` | Host port of the backend API |
 | `JUKEBOX_CORS` | `*` | Allowed CORS origins, comma-separated |

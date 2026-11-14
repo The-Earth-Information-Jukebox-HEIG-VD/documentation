@@ -22,7 +22,7 @@ version tags, and the documentation is published on every push to `main`.
 git tag v* ──▶ docker-publish.yml ──▶ ghcr.io/.../<repo>:<version>, :<major.minor>, :latest
                                               │
                                               ▼
-                     deployment: docker compose pull (TAG / DATA_TAG in .env)
+                     deployment: docker compose pull (*_VERSION in .env)
 
 push main (documentation) ──▶ deploy-pages.yml ──▶ GitHub Pages
 ```
@@ -109,9 +109,9 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-Each push produces `:1.0.0`, `:1.0` and `:latest`. Then, on the server, set `TAG` (webapp + sonification) and
-`DATA_TAG` (datasets) in `deployment/.env` and pull (see [Production](production.md#updating)). The two tags are
-separate so data and code can be versioned independently.
+Each push produces `:1.0.0`, `:1.0` and `:latest`. Then, on the server, set `WEBAPP_VERSION`, `SONIFICATION_VERSION` and
+`DATASETS_VERSION` in `deployment/.env` and pull (see [Production](production.md#updating)). Each image has its own
+version, so the webapp, the backend and the data can be released independently.
 
 !!! note
     The `datasets` image contains all of `datasets/data` (~6.3 GB at the moment); expect a long build and push.
