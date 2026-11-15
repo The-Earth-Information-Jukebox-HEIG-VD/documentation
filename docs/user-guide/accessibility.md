@@ -141,7 +141,7 @@ The eight track colors come in **two palettes**, one for dark backgrounds (globe
 | Lightning | `#ffe815` | `#998b01` |
 | Night lights | `#38b484` | `#027652` |
 | Fires | `#da154c` | `#d51952` |
-| Sea ice | `#834bff` | `#8f75f1` |
+| Sea ice | `#f7f4ee` (ice white) | `#8f75f1` |
 
 Color is still never the only cue: track names are always written next to their dot or line.
 
