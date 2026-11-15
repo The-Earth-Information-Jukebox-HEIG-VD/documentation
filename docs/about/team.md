@@ -8,14 +8,14 @@ We are a team of R&D collaborators at [HEIG-VD](https://heig-vd.ch/) (Haute Ecol
 
 ## Team Members
 
-| Name | Role |
-|------|------|
-| **Egger Magali** | Data Processing |
-| **Ferrari Téo** | Sonification, globe data spots |
-| **Fleurimont Clarisse Estelle** | Frontend, backend API, DevOps, Deployment & Documentation |
-| **Izadmehr Yasaman** | Data Processing |
-| **Walther Simon** | Data Processing |
-| **Zmoos Léo** | Sonification |
+| Name | Role | GitHub |
+|------|------|--------|
+| **Egger Magali** | Data Processing | [magskwa](https://github.com/magskwa) |
+| **Ferrari Téo** | Sonification, globe data spots | [LordTT](https://github.com/LordTT) |
+| **Fleurimont Clarisse Estelle** | Frontend, backend API, DevOps, Deployment & Documentation | [Stellucidam](https://github.com/Stellucidam) |
+| **Izadmehr Yasaman** | Data Processing | [Jussmiin](https://github.com/Jussmiin) |
+| **Walther Simon** | Data Processing | [SimWalther](https://github.com/SimWalther) |
+| **Zmoos Léo** | Sonification | [lzmoosheig](https://github.com/lzmoosheig) |
 
 ---
 
