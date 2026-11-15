@@ -53,6 +53,7 @@ Future plans and features for Earth Information Jukebox and its app, EarthChestr
 - [x] Sea ice (NSIDC Sea Ice Index 1979-2026, bowed glass, API v2.11)
 - [x] Global CO2 sets the tempo in every genre (API v2.13; sonification `v1.3.2`)
 - [x] Vegetation (MODIS NDVI, clarinet), carbon monoxide (MOPITT, bassoon) and ocean plankton (MODIS Aqua chlorophyll, vibraphone) (API v2.14; datasets `v1.3.0`, sonification `v1.3.2`)
+- [x] Realistic mode: the heartbeat is the CO2 track's sound (API v2.15)
 
 ### On `main`, not yet tagged
 

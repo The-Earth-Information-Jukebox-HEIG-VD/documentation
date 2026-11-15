@@ -70,7 +70,7 @@ We assign each climate variable to an orchestral instrument:
 
 Flute (dust) and French Horns (smoke) voices also exist in the composition engine, but no data is served for them yet.
 
-The orchestra is the default music style. A realistic mode plays the sound of each phenomenon instead (rain, fire, thunder, traffic, crickets, singing ice, with a heartbeat that speeds up with the CO2), and seven other genres are there for fun.
+The orchestra is the default music style. A realistic mode plays the sound of each phenomenon instead (rain, fire, thunder, crickets, singing ice, and for CO2 a heartbeat that speeds up with the CO2), and seven other genres are there for fun.
 
 ---
 

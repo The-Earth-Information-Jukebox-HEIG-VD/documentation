@@ -122,7 +122,7 @@ Areas are separated by surface tone and spacing, not borders. Borders remain onl
 
 ### sonificationApi.ts
 
-Typed client for the backend (types are the exact shapes of `sonification/backend/FRONTEND_API.md`; the file header cites v2.10, the backend is at v2.14, whose later additions are new datasets and the CO2 tempo, with no change to the request shapes). The selected points are sent as a compact `mask` (`utils/zoneMask.ts`: 0.1° bit grid, deflate via `CompressionStream`, base64; a few kB instead of up to 14 MB) whenever the browser can build one, otherwise as `points`:
+Typed client for the backend (types are the exact shapes of `sonification/backend/FRONTEND_API.md`; the file header cites v2.10, the backend is at v2.15, whose later additions are new datasets, the CO2 tempo and the realistic heartbeat, with no change to the request shapes). The selected points are sent as a compact `mask` (`utils/zoneMask.ts`: 0.1° bit grid, deflate via `CompressionStream`, base64; a few kB instead of up to 14 MB) whenever the browser can build one, otherwise as `points`:
 
 - `fetchZoneData(request, signal?)` → `POST /api/zones/zone-data` (`ZoneDataRequest`: `zone_id`, `zone_name`, `dataset_ids[]`, `points` or `mask`, `time_period`, `aggregation: "mean"`, optional `genre` and `step: "year"`; `ZoneDataResponse`: `dataset_ids` actually combined, `time_period`, `next_time_period`, `audio_data`, `duration_s`, `bar_starts_s`, `values` per dataset, `point_count`)
 - `fetchZoneSeries(request, signal?)` → `POST /api/zones/series` (`ZoneSeriesRequest`: `dataset_ids[]`, `points`; `ZoneSeriesResponse`: `series` per dataset with `units`, `anomaly`, `start`, `yearly`, `values`, plus `missing`)

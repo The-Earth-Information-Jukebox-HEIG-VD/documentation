@@ -147,7 +147,7 @@ Aliases are accepted (`jazz`, `rock`, `disco`, `electro`, `pop`, `classical`). I
 | Fires | Campfire, plus a fireplace and a low roar for big fires |
 | Lightning | Real thunderclaps, as many as the flashes |
 | Temperature | A low heat drone that trembles faster and clashes when warmer (with `tempo_source: "temperature"`: a heartbeat) |
-| CO2 | City traffic; the heartbeat plays at the CO2's tempo, irregular above 400 ppm |
+| CO2 | A heartbeat at the CO2's tempo, irregular above 400 ppm; it beats only when CO2 is selected, even in years without CO2 maps (v2.15; city traffic with `tempo_source: "temperature"`) |
 | Night lights | 50 Hz hum of street lamps (synthesised) |
 | Sea ice | "Singing" ice: pings of cracks and creaks of floes (synthesised) |
 | Vegetation | Crickets and a cicada (synthesised) |

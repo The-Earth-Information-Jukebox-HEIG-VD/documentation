@@ -1,6 +1,6 @@
 # API Reference
 
-Complete REST API documentation for the Earth Information Jukebox backend (FastAPI, API version 2.14). The webapp built on it is **EarthChestra**, the Earth Information Jukebox project's app.
+Complete REST API documentation for the Earth Information Jukebox backend (FastAPI, API version 2.15). The webapp built on it is **EarthChestra**, the Earth Information Jukebox project's app.
 
 ---
 
@@ -44,6 +44,7 @@ CORS is open by default (`JUKEBOX_CORS=*`, comma-separated list of origins). Eve
 | 2.12 | `"step": "year"`: the same month, year after year |
 | 2.13 | The global CO2 sets the tempo by default (`tempo_source`); a 30 s chunk is about 8 to 13 months |
 | 2.14 | Vegetation (`vegetation`), carbon monoxide (`carbon_monoxide`), ocean plankton (`chlorophyll`) |
+| 2.15 | `realistic`: the heartbeat is the sound of the CO2 track (only when `co2` is selected), in place of city traffic |
 
 The full changelog is in `sonification/backend/API.md`.
 | GET | `/api/options` | no | UI menu options |
@@ -64,7 +65,7 @@ Check server status and capabilities.
 ```json
 {
   "status": "ok",
-  "version": "2.14",
+  "version": "2.15",
   "datasets": 11,
   "data_dir": "/app/data",
   "built_dir": "/app/cache/_datasets",

@@ -176,7 +176,7 @@ In music, snapping pitches to a specific scale (major, minor, pentatonic) rather
 ## R
 
 ### Realistic Mode
-The `realistic` music style: no instruments, each dataset is heard as the sound of what it is (rain, campfire, thunder, city traffic, street-lamp hum, crickets, singing ice, bubbles), with a heartbeat at the CO2's tempo. Recordings are free (CC0, public domain, CC BY); some sounds are synthesised.
+The `realistic` music style: no instruments, each dataset is heard as the sound of what it is (rain, campfire, thunder, street-lamp hum, crickets, singing ice, bubbles), and the CO2 track is a heartbeat at the CO2's tempo. Recordings are free (CC0, public domain, CC BY); some sounds are synthesised.
 
 ### React
 A JavaScript library for building user interfaces, used for the frontend.

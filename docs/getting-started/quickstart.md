@@ -110,7 +110,7 @@ Example response (abridged):
 ```json
 {
   "status": "ok",
-  "version": "2.14",
+  "version": "2.15",
   "datasets": 11,
   "preparing_data": false,
   "merge_datasets": true,
