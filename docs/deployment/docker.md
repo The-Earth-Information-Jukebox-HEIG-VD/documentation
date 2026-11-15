@@ -1,6 +1,6 @@
 # Docker Deployment
 
-Deploy Earth Information Jukebox using Docker Compose. Everything lives in the
+Deploy EarthChestra (the Earth Information Jukebox project's app) using Docker Compose. Everything lives in the
 [`deployment`](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/deployment) repository.
 
 ---
@@ -12,17 +12,18 @@ Deploy Earth Information Jukebox using Docker Compose. Everything lives in the
 - About 2 GB RAM for the backend (the production override caps it at 2 GB)
 - Disk space: the raw datasets are ~6.3 GB (`datasets/data`), the backend image ~1 GB, plus the converted datasets in the cache volume
 
-!!! warning "No images are published yet"
-    `docker-compose.yml` pulls `ghcr.io/the-earth-information-jukebox-heig-vd/{datasets,sonification,webapp}`, each at its own version (`DATASETS_VERSION`, `SONIFICATION_VERSION`, `WEBAPP_VERSION`; default `latest`),
-    but **no image has been pushed to GHCR so far**: the publish workflows only run on `v*` tags and no tag exists yet
-    (see [CI/CD](ci-cd.md#releasing-images)). Until a release is cut, a plain `docker compose up` fails at the pull step.
-    Use the **local build** below.
+!!! info "Published images"
+    `docker-compose.yml` pulls `ghcr.io/the-earth-information-jukebox-heig-vd/{datasets,sonification,webapp}`, each at its own version (`DATASETS_VERSION`, `SONIFICATION_VERSION`, `WEBAPP_VERSION`; default `latest`).
+    Images are published by the `v*` tag workflows (see [CI/CD](ci-cd.md#releasing-images)); the latest release is
+    `v1.1.0` in all three repositories, pulled as `1.1.0` (the version variables take the Git tag **without** the `v`).
+    The repositories are private, so run `docker login ghcr.io` first. To run from the sibling checkouts instead,
+    use the **local build** below.
 
 ---
 
 ## Quick Start (local build)
 
-The working path today: build the images from the sibling repositories and mount the datasets checkout directly.
+Build the images from the sibling repositories and mount the datasets checkout directly (no registry access needed). With the published images, `cp .env.example .env && docker login ghcr.io && docker compose up -d` is enough.
 
 ```bash
 # All repositories side by side
@@ -41,7 +42,7 @@ cd deployment
 ```
 
 `run-local.sh` checks that `../webapp`, `../sonification` and `../datasets/data` exist, copies `.env.example`
-to `.env` if needed, and runs:
+to `.env` if needed (it must set `VITE_API_URL`, `/api` in the example), and runs:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build --wait
@@ -69,18 +70,19 @@ Services:
 | `docker-compose.override.yml` | automatically with plain `docker compose` | Development tweaks (`JUKEBOX_CORS=*`, commented-out local data mount and debug port) |
 | `docker-compose.local.yml` | `-f docker-compose.yml -f docker-compose.local.yml` | Build images from `../webapp` and `../sonification`, bind-mount `../datasets/data`, disable `data-init` |
 | `docker-compose.prod.yml` | `-f docker-compose.yml -f docker-compose.prod.yml` | Traefik with Let's Encrypt on `DOMAIN` / `api.DOMAIN`, no host ports for webapp/backend, restricted CORS, CPU/memory limits, JSON log rotation |
-| `docker-compose.hostdata.yml` | added after `prod` (see [Small Server](production.md#small-server-data-from-a-host-folder)) | Mount the datasets from `JUKEBOX_DATA_PATH` instead of the datasets image; disable `data-init` |
+| `docker-compose.shared-traefik.yml` | **instead of** `prod` (see [Behind an Existing Traefik](production.md#behind-an-existing-traefik-shared-server)) | No own Traefik, no host ports: joins the existing Traefik's network (`TRAEFIK_NETWORK`) with routes for `DOMAIN`, `www.DOMAIN`, `api.DOMAIN`; project name `jukebox`; backend 1.5 GB / webapp 256 MB limits |
+| `docker-compose.hostdata.yml` | added after `prod` or `shared-traefik` (see [Small Server](production.md#small-server-data-from-a-host-folder)) | Mount the datasets from the host folder `JUKEBOX_DATA_PATH` (read-only, into backend and webapp) instead of the datasets image; disable `data-init` |
 
-!!! note
-    The compose files still carry a top-level `version: "3.9"` key. Compose v2 ignores it and prints an
-    "obsolete" warning; it is harmless.
+Instead of `-f` flags, the files can be listed in `.env` as `COMPOSE_FILE`, `:`-separated (for example
+`COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml:docker-compose.hostdata.yml`); `docker-compose.override.yml`
+is then not loaded. The compose files have no top-level `version:` key.
 
 ### Base stack (`docker-compose.yml`)
 
 ```yaml
 services:
   data-init:     # ghcr.io/.../datasets:${DATASETS_VERSION}
-    # copies /datasets/. into the jukebox-data volume once (marker file /data/.initialized), then exits
+    # copies /datasets/. into the jukebox-data volume when its fingerprint (/data/.initialized) differs, then exits
   backend:       # ghcr.io/.../sonification:${SONIFICATION_VERSION}
     ports: ["${BACKEND_PORT:-8000}:8000"]
     environment:
@@ -131,7 +133,7 @@ browser ──:80──▶ webapp (nginx)
 backend (FastAPI, python backend/serve.py)
   ├── reads the raw datasets from /app/data (read-only)
   ├── converts them in the background into /app/cache/_datasets
-  └── serves /api/health, /api/instruments, /api/sonify, /api/zones/zone-data
+  └── serves /api/health, /api/instruments, /api/sonify, /api/zones/zone-data, /api/zones/series, /api/zones/groove
 ```
 
 - **webapp image** (`webapp/Dockerfile`): `node:22-alpine` build stage (`npm ci && npm run build`, build arg
@@ -186,6 +188,10 @@ docker run -p 8000:8000 \
 | `WEBAPP_PORT` | `80` | Host port of the webapp |
 | `BACKEND_PORT` | `8000` | Host port of the backend API |
 | `JUKEBOX_CORS` | `*` | Allowed CORS origins, comma-separated |
+| `JUKEBOX_DATA_PATH` | - | Host folder with the datasets (`docker-compose.hostdata.yml`) |
+| `VITE_API_URL` | `/api` in `.env.example` | Required by `docker-compose.local.yml` (webapp build arg) |
+
+Production variables (`DOMAIN`, `ACME_EMAIL`, `JUKEBOX_CORS_PROD`, `TRAEFIK_VERSION`, `TRAEFIK_NETWORK`, `COMPOSE_FILE`) are listed in [Production → Environment Variables](production.md#environment-variables).
 
 ### Backend container
 
@@ -198,7 +204,7 @@ Set in `sonification/Dockerfile` (and partly by compose):
 | `JUKEBOX_CORS` | `*` | Allowed CORS origins |
 | `JUKEBOX_PREPARE` | `1` | `0` skips the raw-data conversion at start-up |
 | `JUKEBOX_MERGE_DATASETS` | `1` | Each variable is read from its own dataset, lined up by date |
-| `JUKEBOX_FULL_API` | `0` | `0`: only `/api/health`, `/api/instruments`, `/api/sonify`, `/api/zones/zone-data`; `1`: also the engine endpoints (`/api/compose`, `/api/datasets`, `/api/options`, …) |
+| `JUKEBOX_FULL_API` | `0` | `0`: only `/api/health`, `/api/instruments`, `/api/sonify`, `/api/zones/zone-data`, `/api/zones/series`, `/api/zones/groove`; `1`: also the engine endpoints (`/api/compose`, `/api/datasets`, `/api/options`, …) |
 | `JUKEBOX_CHUNK_SECONDS` | `30` | Length of one `/api/sonify` chunk |
 | `PORT` | `8000` | Port uvicorn listens on inside the container |
 
@@ -214,22 +220,32 @@ Set in `sonification/Dockerfile` (and partly by compose):
 
 | Volume | Mounted at | Content |
 |--------|------------|---------|
-| `jukebox-data` | backend `/app/data` (ro), webapp `/usr/share/nginx/data` (ro) | Raw monthly `.npy` maps, copied by `data-init` (registry flow only; the local build uses a bind mount) |
+| `jukebox-data` | backend `/app/data` (ro), webapp `/usr/share/nginx/data` (ro) | Raw monthly `.npy` maps, copied by `data-init` (registry flow only; the local build and `docker-compose.hostdata.yml` use a bind mount) |
 | `jukebox-cache` | backend `/app/cache` | Generated compositions and the converted datasets (`_datasets/`) |
 
 ### Data volume (registry flow)
 
-`data-init` copies the data only if `/data/.initialized` is missing, so a new `datasets` image does not update an
-existing volume. To refresh it:
+`data-init` runs at each `up`. It computes a fingerprint of the image's data (`ls -lR /datasets | md5sum`: file list,
+sizes, dates) and compares it with the one stored in `/data/.initialized`. Equal: it skips. Different (or missing): it
+empties the volume, so files removed or renamed upstream disappear, copies the new data and stores the new
+fingerprint. So changing `DATASETS_VERSION` (or pulling a rebuilt `latest`) refreshes the volume by itself, and the
+backend then rebuilds only the datasets that changed in its cache. To force a full re-copy anyway:
 
 ```bash
 docker compose down
 docker volume rm jukebox-data
 docker compose up -d          # data-init copies again
 
-# or pre-populate / refresh it by hand (pulls the datasets image)
-./scripts/init-data.sh        # optional tag: ./scripts/init-data.sh v1.0.0
+# or pre-populate / refresh it by hand (pulls the datasets image, writes the same fingerprint)
+./scripts/init-data.sh        # optional version: ./scripts/init-data.sh 1.1.0 (Git tag without the "v")
 ```
+
+### Data from a host folder
+
+With `docker-compose.hostdata.yml`, `JUKEBOX_DATA_PATH` (an absolute path holding one folder per dataset, as in the
+`datasets` repository's `data/`) is mounted read-only at `/app/data` (backend) and `/usr/share/nginx/data` (webapp),
+and `data-init` is disabled (moved to the `registry` profile). The datasets image is never pulled. Update the data by
+replacing the folder's contents and running `docker compose restart backend`.
 
 Inspect it:
 
@@ -279,8 +295,9 @@ docker stats
 
 ### `docker compose up` fails pulling images
 
-`manifest unknown` / `denied` from `ghcr.io`: no image has been published yet (see the warning at the top), and the
-repositories are private, so published images will need `docker login ghcr.io` too. Use `./scripts/run-local.sh`.
+`denied` from `ghcr.io`: the repositories are private, so run `docker login ghcr.io` with a token that has
+`read:packages`. `manifest unknown`: the version in `.env` was never published; use a released one (for example
+`1.1.0`, without `v`) or `./scripts/run-local.sh`.
 
 ### Container won't start
 
@@ -323,11 +340,12 @@ git -C ../webapp pull && git -C ../sonification pull && git -C ../datasets pull
 ./scripts/run-local.sh            # rebuilds what changed
 ```
 
-### Registry images (once published)
+### Registry images
 
 ```bash
+# bump WEBAPP_VERSION / SONIFICATION_VERSION / DATASETS_VERSION in .env (e.g. 1.1.0)
 docker compose pull
-docker compose up -d
+docker compose up -d          # data-init refreshes jukebox-data if the datasets changed
 ```
 
 ---

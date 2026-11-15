@@ -186,7 +186,7 @@ The API will be available at:
 
 `data_processing/` holds the scripts that turned NASA sources into the maps of the `datasets` repository
 (e.g. `temperature_anomaly/netcdf_to_numpy.py` for GISTEMP, `nightlights/nightlights_extractor.py`,
-`common_grid/` to put any map on the shared 0.25° grid). Each folder has its own `README.md` and, where needed,
+`precipitation/` (daily 2024 and monthly 2000-2026 precipitation exports), `common_grid/` to put any map on the shared 0.25° grid). Each folder has its own `README.md` and, where needed,
 its own `requirements.txt`. You only need it to regenerate or add a dataset.
 
 ---

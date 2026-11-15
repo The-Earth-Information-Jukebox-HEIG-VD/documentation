@@ -1,6 +1,6 @@
 # API Reference
 
-Complete REST API documentation for the Earth Information Jukebox backend (FastAPI, API version 2.1).
+Complete REST API documentation for the Earth Information Jukebox backend (FastAPI, API version 2.6). The webapp built on it is **EarthChestra**, the Earth Information Jukebox project's app.
 
 ---
 
@@ -13,7 +13,7 @@ Complete REST API documentation for the Earth Information Jukebox backend (FastA
 CORS is open by default (`JUKEBOX_CORS=*`, comma-separated list of origins). Every request and response is JSON, and errors have a `detail` message.
 
 !!! info "Two sets of endpoints"
-    The **deployed backend** (Docker image, `JUKEBOX_FULL_API=0`) serves only the webapp's calls: `GET /api/health`, `GET /api/instruments`, `POST /api/sonify` and `POST /api/zones/zone-data`. The **engine endpoints** (`/api/options`, `/api/datasets`, `/api/sonify/debug`, `/api/compose`, `/api/compositions/{id}`, `/api/files/...`) are served when `JUKEBOX_FULL_API=1`, the default outside Docker.
+    The **deployed backend** (Docker image, `JUKEBOX_FULL_API=0`) serves only the webapp's calls: `GET /api/health`, `GET /api/instruments`, `POST /api/sonify`, `POST /api/zones/zone-data`, `POST /api/zones/series` and `POST /api/zones/groove` (`FRONTEND_PATHS` in `backend/app.py`). The contract of these six is `sonification/backend/FRONTEND_API.md`. The **engine endpoints** (`/api/options`, `/api/datasets`, `/api/sonify/debug`, `/api/compose`, `/api/compositions/{id}`, `/api/files/...`) are served when `JUKEBOX_FULL_API=1`, the default outside Docker.
 
 ---
 
@@ -25,6 +25,8 @@ CORS is open by default (`JUKEBOX_CORS=*`, comma-separated list of origins). Eve
 | GET | `/api/instruments` | yes | Which instrument plays which dataset |
 | POST | `/api/sonify` | yes | Selected points + one time period in, 30 s of MP3 (base64) out |
 | POST | `/api/zones/zone-data` | yes | Same as `/api/sonify` with the webapp's field names; **the call the webapp uses** |
+| POST | `/api/zones/series` | yes | The whole monthly series of the selected area, no audio (the webapp's data graph) |
+| POST | `/api/zones/groove` | yes | Vinyl mode (v2.6): a path in space at one fixed date in, its music (MP3, base64) out |
 | GET | `/api/options` | no | UI menu options |
 | GET | `/api/datasets` | no | Available datasets |
 | POST | `/api/sonify/debug` | no | `/api/sonify` with engine options and a detailed answer |
@@ -43,8 +45,8 @@ Check server status and capabilities.
 ```json
 {
   "status": "ok",
-  "version": "2.1",
-  "datasets": 6,
+  "version": "2.6",
+  "datasets": 7,
   "data_dir": "/app/data",
   "built_dir": "/app/cache/_datasets",
   "preparing_data": false,
@@ -85,8 +87,9 @@ Which instrument plays which dataset. No parameters. One entry per dataset the s
     "co2": "Contrabass",
     "precipitation": "Violins (melody)",
     "snow": "Glockenspiel (melody)",
-    "lightning": "Xylophone",
-    "night_lights": "Harp (melody)"
+    "fires": "Trombones",
+    "lightning": "Timpani",
+    "night_lights": "Synth pad"
   },
   "instruments": [
     {
@@ -111,12 +114,13 @@ Which instrument plays which dataset. No parameters. One entry per dataset the s
 | `co2` | Contrabass | ppm | 2002-09 to 2022-03 |
 | `precipitation` | Violins (melody) | mm/day of rain | 2000-06 to 2026-11 |
 | `snow` | Glockenspiel (melody) | mm/day of melted water | 2000-06 to 2026-11 |
-| `lightning` | Xylophone | share of the area with lightning (0 to 1) | 2017-03 to 2023-07 |
-| `night_lights` | Harp (melody) | brightness (0 to 1) | 2012-01 to 2023-12, one value per year |
+| `fires` | Trombones | days of the month with a fire | 2002-07 to 2026-11 |
+| `lightning` | Timpani | share of the area with lightning (0 to 1) | 2017-03 to 2023-07 |
+| `night_lights` | Synth pad | brightness (0 to 1) | 2012-01 to 2023-12, one value per year |
 
-(The periods are those of the datasets in the Docker image; the response reports whatever the server has.) `dust` and `smoke` also exist as instruments (flute, French horns) but only appear when a dataset for them is present. `first_time_period` / `last_time_period` are `YYYY-MM`, or `YYYY-MM-DD` for daily data. `role` is the instrument's role (`harmony`, `bass`, `melody`; the lightning xylophone is `percussion`).
+(The periods are those of the datasets in the Docker image; the response reports whatever the server has.) `dust` and `smoke` also exist as instruments (flute, French horns) but only appear when a dataset for them is present. `first_time_period` / `last_time_period` are `YYYY-MM`, or `YYYY-MM-DD` for daily data. `role` is the instrument's role: `harmony` (piano), `bass` (contrabass), `melody` (violins, glockenspiel), `swell` (trombones, synth pad); the lightning timpani report `percussion` (internally `timpani`, mapped by `ROLE_LABELS`).
 
-`dataset_id` is what you send to `/api/sonify`. `co2_atmosphere` is also accepted for `co2`. The webapp's other tracks (`co2_emissions`, `wildfires`, `antarctica_melt`, `ecosystem`, `deforestation`) have no data yet.
+`dataset_id` is what you send to `/api/sonify`. Aliases are also accepted: `co2_atmosphere` for `co2`, `fire` and `wildfires` for `fires`, `rain` for `precipitation`, `snowfall` for `snow`, `nightlights` for `night_lights` (`VARIABLE_ALIASES` in `backend/app.py`). The webapp builds its tracks from this list, so it shows exactly these seven.
 
 ---
 
@@ -146,10 +150,11 @@ The webapp's call: selected points and one time period in, 30 seconds of music o
 | `zone_name` | string | No | Your own label |
 | `dataset_id` | string or string[] | No | A `dataset_id` of `/api/instruments`, or a list to hear several instruments together. Omitted (or `"all"` / `"orchestra"`) = every variable the server has data for in that period |
 | `points` | array | Yes* | Selected points. `lat` (-90..90) and `lng` (-180..360) are used; `lon`, `latitude`, `longitude` are accepted as aliases; `x`, `y` are accepted and ignored |
+| `mask` | string | No | The same area as a compressed bitmap, **instead of** `points` (v2.5, recommended for big zones; see [below](#mask-big-zones-in-a-few-kb)). If both are sent, `mask` is used |
 | `time_period` | string | No | Where the music starts: `"YYYY-MM"` (a year alone, `"1950"`, also works; `"YYYY-MM-DD"` for daily data) |
 | `aggregation` | string | No | `"mean"` (the only value, an area-weighted mean; anything else is a `422`) |
 
-*Without `points`, `zone_id` must be a preset zone, otherwise `422`.
+*Without `points` or `mask`, `zone_id` must be a preset zone, otherwise `422`.
 
 Unknown extra fields are ignored.
 
@@ -181,10 +186,10 @@ Unknown extra fields are ignored.
 
 - **30 seconds is 10 months**: one bar of music per month. The next period after `2015-01` is `2015-11`, not `2015-02`: use `next_time_period`, do not add one month yourself. (With daily data, periods are days.)
 - **Several datasets**: each instrument plays where its own data exists and is silent elsewhere (for example, temperature and precipitation from 1999: the violins come in in June 2000). A variable with no data at all in the period is left out of the piece.
-- **Yearly data** (`night_lights`): the value is the year's, so the harp holds its note for 12 bars and changes in January.
+- **Yearly data** (`night_lights`): the value is the year's. The synth pad starts clearly each January, when the value changes, then fades slowly over the year to a softer background note.
 - **The same value is the same note** in every chunk of the same area (the pitch scale is that of the whole series), so consecutive chunks connect.
 - A first request takes 2 to 5 seconds; the same request again is immediate (cached).
-- **Errors**: `400` unknown `dataset_id` (the message lists the available ones) or no data for these points and this period; `422` malformed request (no points and no preset zone, latitude out of range, another `aggregation`); `503` audio rendering is unavailable on the server (see `GET /api/health`).
+- **Errors**: `400` unknown `dataset_id` (the message lists the available ones) or no data for these points and this period; `422` malformed request (no points, no mask and no preset zone, latitude out of range, another `aggregation`, an invalid `mask`); `503` audio rendering is unavailable on the server (see `GET /api/health`).
 
 ### Playing the Audio
 
@@ -231,7 +236,125 @@ source.start();
 }
 ```
 
-A dataset the server has no data for is left out of the piece, not an error, as long as at least one remains (`400` otherwise); `dataset_ids` in the answer says which ones were combined. `values` has an entry for each dataset that has data at `time_period`.
+A dataset the server has no data for is left out of the piece, not an error, as long as at least one remains (`400` otherwise); `dataset_ids` in the answer says which ones were combined. `values` has an entry for each dataset that has data at `time_period`. With `mask`, `point_count` is the number of 0.1° cells it selects.
+
+### `mask`: big zones in a few kB
+
+As points, an ocean is about 57 000 entries, about 3 MB of JSON sent again with every chunk (the whole globe: 14 MB). `mask` (API v2.5) describes the same cells in 2 to 4 kB:
+
+1. a grid of 1800 × 3600 booleans (0.1°), row 0 = 90°N, column 0 = 180°W, the same grid the points are placed on: point → `row = Math.min(Math.floor((90 - lat) * 1800 / 180), 1799)`, `col = Math.min(Math.floor(((lng + 180) % 360) * 3600 / 360), 3599)` (exactly these operations, in this order, so the floating-point rounding is the server's);
+2. packed 8 cells per byte, row-major, first cell = highest bit (numpy `packbits`): 810 000 bytes;
+3. compressed with zlib (the browser's `new CompressionStream("deflate")`), then base64.
+
+The server finds exactly the cells the points would give, so the music and the values are identical. `mask` is accepted by `/api/sonify`, `/api/zones/zone-data` and `/api/zones/series`; the webapp sends it whenever the browser can build one (`utils/zoneMask.ts`). It is a `422` when it is not base64 of zlib data, does not inflate to exactly 810 000 bytes, or selects no cell.
+
+---
+
+## POST `/api/zones/series`
+
+The whole monthly series of the selected area, for a chart (API v2.4; `mask` since v2.5). No audio: one value per month for each requested dataset, the same area-weighted mean (cos latitude, cells of 0.1°) as the `values` of `/api/zones/zone-data`, so the value played for a month is the value the chart shows for it. The webapp calls it as `fetchZoneSeries` (hook `useZoneSeries`) for its data graph.
+
+### Request
+
+```json
+{
+  "zone_id": "france",
+  "zone_name": "France",
+  "dataset_ids": ["temperature", "night_lights"],
+  "points": [{"lat": 48.8566, "lng": 2.3522}, {"lat": 43.2965, "lng": 5.3698}],
+  "aggregation": "mean"
+}
+```
+
+`dataset_ids`: at least one id of `/api/instruments` (aliases accepted). `points`: 1 to 20 000 `{lat, lng}` (`x`, `y` accepted, not used), or instead `mask` (no size limit, the same format as above). `zone_id`, `zone_name` optional. `aggregation`: only `"mean"`.
+
+### Response
+
+```json
+{
+  "zone_id": "france",
+  "step": "month",
+  "point_count": 2,
+  "series": {
+    "temperature":  {"units": "degC anomaly", "anomaly": true, "start": "1880-01", "yearly": false,
+                     "values": [-0.4215, -0.1022, null]},
+    "night_lights": {"units": "brightness (0-1)", "anomaly": false, "start": "2012-01", "yearly": true,
+                     "values": [0.1532, 0.1532]}
+  },
+  "missing": []
+}
+```
+
+- `values[i]` is the month `start + i`; the axis has no gap (one value per month up to the dataset's last month), a month without data is `null`. Values are rounded to 4 decimals.
+- `start` is **per dataset**: the first month of that dataset's own data, the same as its `first_time_period` in `/api/instruments`.
+- `units` is the same text as in `/api/instruments`; `anomaly: true` = degrees away from a normal.
+- `yearly: true` (`night_lights`): one map per year, so the 12 months of a year have the same value. Draw it as steps.
+- Daily data is averaged per month.
+- `missing`: the requested ids the server has no data for. They are left out of `series`, not an error, as long as one id is known.
+- **Errors**: `400` when none of the ids is known; `422` malformed request (no points and no mask, more than 20 000 points, an invalid `mask`, no `dataset_ids`, another `aggregation`).
+- The first request for an area takes up to about a second (the 1880 to today temperature); the same area again is immediate (cached in memory).
+
+---
+
+## POST `/api/zones/groove`
+
+Vinyl mode (API v2.6): the date stays fixed, what moves is the place. The frontend sends the stretch of path the needle crosses next, the backend answers with its music. Bars are 3 s, as in `/api/zones/zone-data`; with `points_per_bar: 4` every point is one beat (0.75 s), so **a 30 s chunk is 40 points**. The music comes from `music/groove.py` in the sonification repository.
+
+### Request
+
+```json
+{
+  "zone_id": "record-1",
+  "dataset_ids": ["temperature", "precipitation", "lightning", "fires"],
+  "time_period": "2018-07",
+  "points_per_bar": 4,
+  "radius_deg": 2,
+  "path": [{"lat": -0.5, "lng": 0.0}, {"lat": -0.5, "lng": 9.0}, {"lat": -0.5, "lng": 18.0}]
+}
+```
+
+```js
+// 30 s of an outer groove: a circle of latitude, 9 degrees per point (longitudes past 180 are wrapped)
+const path = Array.from({ length: 40 }, (_, i) => ({ lat: -0.5, lng: i * 9 }));
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `time_period` | string | Yes | The fixed date: a month `"2018-07"` or a whole year `"2018"` (the mean of its months: calmer, and covers more datasets) |
+| `path` | array | Yes | The points `{lat, lng}` the needle crosses, in order. Whole bars: a multiple of `points_per_bar`, at most 20 bars (60 s) and 80 points. Points closer than about 2° add nothing (the maps are 1°, temperature 2°) |
+| `points_per_bar` | int | No | `1`, `2` or `4` (default `1`): how many points share one 3 s bar. `4` = one point per beat (0.75 s) |
+| `radius_deg` | float | No | How wide the needle reads, from 0.1 to 10 (default 1.5): each point is the mean over a disc of that radius. Wide = smooth music, narrow = detailed and jumpy |
+| `dataset_ids` | array | No | As for zone-data; omitted = every dataset |
+| `zone_id` | string | No | The frontend's id of this stretch or record, echoed back |
+
+### Response
+
+```json
+{
+  "zone_id": "record-1",
+  "time_period": "2018-07",
+  "dataset_ids": ["temperature", "precipitation", "lightning", "fires"],
+  "audio_data": "<base64 mp3>",
+  "duration_s": 30.0,
+  "bar_seconds": 3.0,
+  "points_per_bar": 4,
+  "stop_seconds": 0.75,
+  "radius_deg": 2.0,
+  "stops": [
+    {"lat": -0.5, "lng": 0.0, "values": {"temperature": 1.23, "precipitation": 0.03, "lightning": 0.0, "fires": 0.0}},
+    {"lat": -0.5, "lng": 9.0, "values": {"temperature": 1.32, "precipitation": 0.28, "lightning": 0.0, "fires": 0.78}}
+  ]
+}
+```
+
+- `stops[i]` plays from `i × stop_seconds` to `(i + 1) × stop_seconds`: move the needle and show its values on that clock. `null` = no data under the needle there (lightning beyond 55°), that instrument is silent there; `0` = data that says "none" (no fire over the ocean), silent too but known.
+- Places are **snapped to a 0.5° grid** (`stops` gives the snapped positions). Two listeners crossing the same places get the same piece from the cache, in about 0.1 s.
+- **One scale for the whole planet**: a value is the same note wherever the needle is (the dataset's global range), so hot and cold places really sound different. In `/api/zones/zone-data` the scale is the zone's own history.
+- Every piece has the same tempo and key, so consecutive stretches of a groove join without a jump. Send the next stretch **about 5 s before** the current piece ends: a new stretch takes a few seconds to compose the first time.
+- `dataset_ids` in the answer: the datasets that have data along the path at that date. A dataset whose dates do not cover `time_period` (lightning before 2017) is left out.
+- **Speed** is the frontend's choice: at 9° per point (4 per bar) the needle circles the equator in 30 s. A slower needle = points closer together, not more points per chunk.
+- **Errors**: `400` unknown `dataset_ids`, or no data at that date along the whole path; `422` malformed request (`time_period` not `YYYY-MM` / `YYYY`, no `path`, a `path` that is not whole bars, more than 20 bars or 80 points, `points_per_bar` other than 1, 2, 4, `radius_deg` out of range).
+- The first request at a new date reads each map once (a few seconds); the next requests at that date only read the needle.
 
 ---
 
@@ -564,11 +687,11 @@ Unknown dataset, composition or file, or no dataset on the server.
 
 ### 422 Unprocessable Entity
 
-Invalid input (bad zone, malformed `cells` or `bbox`, `aggregation` other than `mean`, latitude out of range, no points). For validation errors `detail` can be a list of `{loc, msg}` objects.
+Invalid input (bad zone, malformed `cells` or `bbox`, `aggregation` other than `mean`, latitude out of range, no points, an invalid `mask`, more than 20 000 points on `/api/zones/series`; on `/api/zones/groove`: a `time_period` that is not `YYYY-MM` / `YYYY`, a `path` that is not whole bars or longer than 20 bars / 80 points, `points_per_bar` other than 1, 2, 4, `radius_deg` outside 0.1 to 10). For validation errors `detail` can be a list of `{loc, msg}` objects.
 
 ```json
 {
-  "detail": "points is empty: send the selected points [{lat, lng}, ...]"
+  "detail": "points is empty: send the selected points [{lat, lng}, ...] or a mask"
 }
 ```
 

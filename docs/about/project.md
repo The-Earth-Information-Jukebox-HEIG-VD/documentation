@@ -2,7 +2,7 @@
 
 ## NASA Space Apps Challenge 2026
 
-Earth Information Jukebox was created for the [NASA Space Apps Challenge](https://www.spaceappschallenge.org/), the world's largest annual global hackathon. The challenge invites innovators, scientists, designers, storytellers, makers, technologists, and others to use open NASA data to create solutions to challenges we face on Earth and in space.
+Earth Information Jukebox, whose app is called **EarthChestra**, was created for the [NASA Space Apps Challenge](https://www.spaceappschallenge.org/), the world's largest annual global hackathon. The challenge invites innovators, scientists, designers, storytellers, makers, technologists, and others to use open NASA data to create solutions to challenges we face on Earth and in space.
 
 ### The Challenge
 
@@ -27,7 +27,7 @@ We transform climate visualizations into **audio** through a process called **so
   ISS LIS, Earth at Night  (VSCO / SoundFont)         played with Web Audio
 ```
 
-1. **Data preparation**: NASA sources (GISTEMP temperature anomalies, GPM IMERG rain and snow, ISS LIS lightning, Earth at Night lights, CO2 maps extracted by the team) are converted by the `data_processing` scripts onto one common 0.25° grid (720×1440), one `.npy` file per month, stored in the `datasets` repository.
+1. **Data preparation**: NASA sources (GISTEMP temperature anomalies, GPM IMERG rain and snow, ISS LIS lightning, Earth at Night lights, MODIS fires, CO2 maps extracted by the team) are converted by the `data_processing` scripts onto one common 0.25° grid (720×1440), one `.npy` file per month, stored in the `datasets` repository.
 
 2. **Selection**: In the webapp, the user picks a zone on the globe (or in the list view) and enables instrument tracks. The track list comes from `GET /api/instruments`.
 
@@ -35,7 +35,7 @@ We transform climate visualizations into **audio** through a process called **so
    - Temperature anomaly → Piano chords (higher temp = higher pitch)
    - Rain → Violin melody
    - CO2 → Contrabass line
-   - Snow, lightning, night lights → Glockenspiel, Xylophone, Harp
+   - Snow, fires, lightning, night lights → Glockenspiel, Trombones, Timpani, Synth pad
 
 4. **Playback**: The backend returns 30 seconds of MP3 (10 months of data, one bar per month) plus the next period to request. The webapp chains the chunks seamlessly, and the globe draws the raw dataset values for the month being played.
 

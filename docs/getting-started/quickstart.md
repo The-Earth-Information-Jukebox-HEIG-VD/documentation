@@ -1,6 +1,6 @@
 # Quick Start
 
-Get Earth Information Jukebox running locally.
+Get EarthChestra, the Earth Information Jukebox project's app, running locally.
 
 !!! info "Repositories"
     The code lives in the [The-Earth-Information-Jukebox-HEIG-VD](https://github.com/The-Earth-Information-Jukebox-HEIG-VD)
@@ -40,8 +40,8 @@ Stop it with `./scripts/run-local.sh down`.
     The first start converts the datasets in the background (a few minutes). Music is available once
     `GET /api/health` reports `"preparing_data": false`.
 
-    A plain `docker compose up -d` pulls pre-built images from GHCR, but none has been published yet; see
-    [Docker Deployment](../deployment/docker.md).
+    A plain `docker compose up -d` pulls the pre-built images from GHCR instead (published, latest release `1.1.0`;
+    run `docker login ghcr.io` first, the packages are private); see [Docker Deployment](../deployment/docker.md).
 
 ---
 
@@ -110,8 +110,8 @@ Example response (abridged):
 ```json
 {
   "status": "ok",
-  "version": "2.1",
-  "datasets": 6,
+  "version": "2.6",
+  "datasets": 7,
   "preparing_data": false,
   "merge_datasets": true,
   "audio_rendering": true,
@@ -126,7 +126,7 @@ Example response (abridged):
 
 Visit http://localhost:5173 (manual setup) or http://localhost (Docker). You should see:
 
-- The Earth Information Jukebox interface with the globe
+- The EarthChestra interface with the globe
 - The list of tracks (one instrument per dataset)
 - Audio playback controls
 

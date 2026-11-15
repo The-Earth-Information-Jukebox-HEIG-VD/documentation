@@ -1,6 +1,6 @@
 # Using the App
 
-A guide for end users of Earth Information Jukebox.
+A guide for end users of **EarthChestra**, the Earth Information Jukebox project's app.
 
 ---
 
@@ -29,22 +29,26 @@ Use the language selector in the header to switch between English, French and Ge
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  Earth Information Jukebox        Home  About     [Language]  │
+│  EarthChestra                     Home  About     [Language]  │
 ├──────────────────────────────────────────────────────────────┤
-│  [Globe | List]  (i)        [Continents | Countries | Oceans] │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │                                                          │ │
-│  │             3D globe  (or the List view)                 │ │
-│  │             Click a zone to select it                    │ │
-│  │                                                          │ │
-│  └─────────────────────────────────────────────────────────┘ │
+│  [Time travel | Vinyl]  [Globe | List]  [Continents | ...]   │
+│  ┌────────────────┐ ┌──────────────────────────────────────┐ │
+│  │ What do you    │ │                                      │ │
+│  │ want to hear?  │ │   3D globe  (or the List view)       │ │
+│  │ [x] Temperature│ │   Click a zone to select it          │ │
+│  │ [ ] Rain  ...  │ │                                      │ │
+│  └────────────────┘ └──────────────────────────────────────┘ │
 │  Key Climate Moments:  [1880] [1934] ...  (jump to a moment)  │
 ├──────────────────────────────────────────────────────────────┤
-│  [⏮] [▶] [⏭]  1998  1880 ──────●────────── 2025   🔊━━  [♫ 1]│
+│  (data graph, when Graph is on)                               │
+│  [⏮] [▶] [⏭] [Mar 1998] 1880 ───●───── 2025 🔊━━ [Graph] [Sounds 1]│
 └──────────────────────────────────────────────────────────────┘
 ```
 
 The player bar stays at the bottom of every page (including About), so audio can always be paused.
+
+!!! note "Time travel and Vinyl"
+    The **Time travel / Vinyl** switch at the top chooses the experience. This guide describes **Time travel** (one zone, the music travels through the years), the finished mode. **Vinyl** (one month played across the globe like a record) is still in development: see [Frontend: vinyl experience mode](../development/frontend.md#in-development-vinyl-experience-mode).
 
 ---
 
@@ -58,24 +62,25 @@ The player bar stays at the bottom of every page (including About), so audio can
 
 Play stays disabled until a zone is selected ("Select a zone on the globe to play"). There is no free-form area drawing: you pick predefined zones.
 
-### Choose the Tracks (datasets)
+### Choose the Sounds (datasets)
 
-Press the **Audio tracks** button (music-note icon with a badge showing how many tracks are on) at the right of the player to open the track panel. Switch several tracks on to hear different measurements together, each with its own instrument.
+The **What do you want to hear?** panel sits next to the globe. Its heading is a Show/Hide button that collapses the list to a short summary ("N tracks selected"); the **Sounds** button at the right of the player (with a badge showing how many tracks are on) shows or hides the same panel, and moves the focus to the first track when it opens it. The panel is part of the page, not a dialog, and the app remembers whether it was open. Switch several tracks on to hear different measurements together, each with its own instrument; while playing, a small animated bar marks the tracks that are sounding.
 
 For each track the panel shows:
 
 - the dataset name and the **instrument** that plays it
 - the **period** covered ("From 1880 to 2025")
-- a badge **Real data** (observed) or **Simulated** (modelled)
+- "only when present" for instruments that are silent when their phenomenon is absent (rain, snow, lightning, fires, night lights)
 - tracks the server has no data for are greyed out and marked "Not available on the server"
 
-The track list comes from the server, so it can change as new data is added. Temperature is on by default. At least one track must be on to play. Press Escape to close the panel.
+The track list comes from the server, so it can change as new data is added. Temperature is on by default. At least one track must be on to play; with none, the player shows a **Choose sounds** link that opens the panel.
 
 ### Choose the Time
 
-There is no start date or duration field. The timeline always spans the period covered by the enabled tracks (for temperature, 1880 to 2025):
+There is no duration field. The timeline always spans the period covered by the enabled tracks (for temperature, 1880 to 2025):
 
 - click or drag the **timeline** to jump to a year
+- press the **date** shown left of the timeline (for example "Mar 1998") to open **Go to a date**: choose a year and a month, then **Go** (months after the last data month are disabled; **Close** or Escape closes it without moving)
 - use the **Key Climate Moments** cards to jump to a historical event
 - playback starts from the beginning (or from where you seeked) and plays through the years, 30 seconds of music at a time
 
@@ -89,13 +94,19 @@ There is no start date or duration field. The timeline always spans the period c
 |---------|--------|
 | ▶ / ⏸ Play / Pause | Start or pause playback (Play needs a zone and at least one track) |
 | ⏮ / ⏭ Skip | Jump backward / forward by 10% of the timeline |
-| Timeline | Click or drag to seek; with the keyboard, focus it and use the arrow keys |
+| Date | Opens **Go to a date** (year + month) |
+| Timeline | Click or drag to seek; with the keyboard, focus it and use the keys below |
 | 🔊 Volume | Volume slider and mute button |
-| Audio tracks | Open the track panel |
+| Graph | Show / hide the data graph above the player |
+| Sounds | Show / hide the "What do you want to hear?" panel |
 
 There is no Stop button: pause, then seek to the start (Home) to begin again. There is also no per-track volume, because the server mixes all tracks into a single audio stream.
 
-When you press Play, the globe zooms to your zone and draws the **real dataset values** behind the sound as coloured dots, month by month in step with the music. A legend lists the datasets with their value ranges, and a table with the same values is available to screen readers. Use **Change zone** (or Escape) to go back to zone selection; this pauses playback.
+When you press Play, the globe zooms to your zone and draws the **real dataset values** behind the sound as coloured spots (bigger where the value is higher; below-normal temperature is a ring), growing and shrinking month by month in step with the music. A legend lists the datasets with their value ranges, and a table with the same values is available to screen readers. Use **Change zone** (or Escape) to go back to zone selection; this pauses playback.
+
+### The Data Graph
+
+Press **Graph** in the player to show a chart of the data you are hearing, above the timeline and on the same time axis. It draws one line per enabled track for the selected zone, in the track's colour and with its own dash pattern; each line uses its own scale, and anomalies (temperature) mark "0 = normal". Night lights, a yearly value, are drawn as steps. The legend gives each line's value at the playback position, or at the date you hover on the chart or the timeline; clicking the chart seeks there. Screen readers get a text summary (the lowest and highest value of each line, with their dates) and a table of yearly averages. The graph needs a zone and at least one track; the app remembers whether it was on.
 
 If audio takes a moment to load you see "Loading audio for 1950…". If the server fails, an error appears with a **Retry** button. When the data ends you see "End of the data reached."
 
@@ -109,9 +120,9 @@ If audio takes a moment to load you see "Loading audio for 1950…". If the serv
 | `Home` | Jump to beginning |
 | `End` | Jump to end |
 | `M` | Mute / Unmute |
-| `Esc` | Close the track panel, or leave the playback view of the globe |
+| `Esc` | Leave the playback view of the globe (back to zone selection), or close **Go to a date** |
 
-When the volume slider is focused, the arrow keys change the volume. Shortcuts are ignored while you type in a field or while a dialog is open.
+When the **timeline** is focused it also accepts `Shift` + `←` / `→` (one month back / forward) and `Page Down` / `Page Up` (one year back / forward). When the volume slider is focused, the arrow keys change the volume. Shortcuts are ignored while you type in a field or while a dialog is open.
 
 !!! note
     A `?` keyboard-help dialog exists in the code but is not currently displayed, so `?` has no effect.
@@ -141,10 +152,11 @@ The instrument for each track is shown in the track panel. The server currently 
 | Contrabass | CO2, the deep bass line |
 | Violins (melody) | Precipitation |
 | Glockenspiel (melody) | Snowfall |
-| Xylophone | Lightning |
-| Harp (melody) | Night lights |
+| Timpani | Lightning (thunder: more flashes, more hits) |
+| Trombones | Fires, swelling and holding below the piano |
+| Synth pad | Night lights (one value per year, fading through the year) |
 
-Which of these are available depends on the data loaded on the server, and each has its own period (for example CO2 2002 to 2022, lightning 2017 to 2023). Real versus simulated data is flagged in the track panel.
+Which of these are available depends on the data loaded on the server, and each has its own period (for example CO2 2002 to 2022, fires 2002 to 2026, lightning 2017 to 2023).
 
 ---
 

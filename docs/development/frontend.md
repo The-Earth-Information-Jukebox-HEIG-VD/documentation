@@ -1,6 +1,6 @@
 # Frontend Development
 
-The frontend is a React 19 + TypeScript application built with Vite. It plays the music composed by the backend through the Web Audio API and draws the selected zone's data on a 3D globe.
+The frontend, **EarthChestra** (the Earth Information Jukebox project's app), is a React 19 + TypeScript application built with Vite. It plays the music composed by the backend through the Web Audio API and draws the selected zone's data on a 3D globe.
 
 !!! warning "The backend is required"
     The webapp has no offline fallback. Without the sonification backend there is no sound and the UI shows a "sound server cannot be reached" error. Start it with `cd sonification && uvicorn backend.app:app --port 8000` (see the [Backend guide](backend.md)).
@@ -36,38 +36,51 @@ In production, nginx serves the build, proxies `/api/` to the `backend` containe
 ```
 webapp/src/
 ├── audio/
-│   └── ChunkPlayer.ts          # Plays the server's 30 s chunks (outside React)
+│   ├── ChunkPlayer.ts          # Plays the server's 30 s chunks (outside React)
+│   └── iosAudioUnlock.ts       # iOS: plays Web Audio despite the silent switch (audio session "playback")
 ├── services/
-│   ├── sonificationApi.ts      # Typed client for /api/zones/zone-data, /instruments, /health
-│   └── volumeData.ts           # Lists and reads datasets under /data/ (Range requests)
+│   ├── sonificationApi.ts      # Typed client for /api/zones/zone-data, /zones/series, /instruments, /health
+│   ├── volumeData.ts           # Lists and reads datasets under /data/ (Range requests)
+│   └── vinylApi.ts             # Vinyl mode (in development, simulated on zone-data)
 ├── hooks/
 │   ├── useSonification.ts      # React interface to ChunkPlayer
 │   ├── useInstruments.ts       # Track list from GET /api/instruments
 │   ├── useZoneDataFrames.ts    # Raw dataset values of the zone, month by month
+│   ├── useZoneSeries.ts        # Monthly series of the zone for the data graph (POST /api/zones/series)
+│   ├── usePlaybackPosition.ts  # External store for the fine playback position (~10 Hz)
+│   ├── useLocalStorageBoolean.ts # Boolean preference in localStorage (panel open, graph on)
+│   ├── useCompactOnScroll.ts   # Compact sticky header once the page is scrolled
+│   ├── usePlayerBarHeight.ts   # Keeps --player-bar-height equal to the real player bar height
+│   ├── usePlayerShortcuts.ts   # Global player keys (used by the vinyl player bar)
+│   ├── useVinylSettings.ts / useVinylSonification.ts  # Vinyl mode (in development)
 │   └── useHashRoute.ts         # #home / #about routing
 ├── data/
-│   ├── datasetRegistry.ts      # Known datasets: colours, display ranges, track ids
+│   ├── datasetRegistry.ts      # Known datasets: display ranges, track ids
+│   ├── trackColors.ts          # One colour per dataset (track dot, graph line, globe spots)
 │   ├── keyMoments.ts           # Key climate moments on the timeline
+│   ├── vinylPresets.ts         # Ready-made record centres (vinyl mode)
 │   └── zones/                  # Continents, countries, water bodies (GeoJSON)
 ├── components/
-│   ├── visualization/          # GlobeView, ListView
-│   ├── player/                 # AudioPlayerEnhanced, Timeline, VolumeControl, PositionDisplay
-│   ├── panels/                 # SlidingPanel, TrackSelector, TrackCheckbox
-│   ├── controls/               # ViewModeToggle, ZoneViewSelector, LanguageSelector, InfoTooltip
+│   ├── visualization/          # GlobeView, ListView, useSpotLayer + flowSpots (playback spots);
+│   │                           # VinylGlobeView, VinylRecordView, VinylChunkTable
+│   ├── player/                 # AudioPlayerEnhanced, Timeline, DatePicker, SeriesChart,
+│   │                           # VolumeControl, PositionDisplay; VinylPlayerBar
+│   ├── controls/               # TrackPanel, ViewModeToggle, ZoneViewSelector, LanguageSelector,
+│   │                           # InfoTooltip; ExperienceModeSwitch, VinylControls
 │   ├── moments/                # Key moments section
 │   ├── layout/ about/          # Header, Footer, Navigation, About page
 │   └── (legacy, not mounted)   # AudioPlayer, DataVisualizer, DataSelector, InfoPanel,
 │                               # KeyboardShortcuts, AudioTranscript
-├── contexts/                   # AccessibilityContext, ViewModeContext
+├── contexts/                   # AccessibilityContext, ViewModeContext, ExperienceModeContext
 ├── i18n/                       # EN / FR / DE (common.json, player.json)
-├── utils/                      # npy reader, zone cells, geometry, reading formatter
+├── utils/                      # npy reader, zone cells, zoneMask (compact `mask`), geometry, reading formatter, vinylGeometry, regionName
 ├── types/                      # tracks.ts, zones.ts, ...
 ├── App.tsx
 └── main.tsx
 ```
 
 !!! note "Legacy components"
-    `AudioPlayer`, `DataVisualizer`, `DataSelector`, `InfoPanel`, `KeyboardShortcuts`, `AudioTranscript` and `useAudioContext` still exist in the repository but `App.tsx` does not use them. The live UI is `AudioPlayerEnhanced` + `GlobeView`/`ListView` + `TrackSelector`.
+    `AudioPlayer`, `DataVisualizer`, `DataSelector`, `InfoPanel`, `KeyboardShortcuts`, `AudioTranscript` and `useAudioContext` still exist in the repository but `App.tsx` does not use them. The live UI is `AudioPlayerEnhanced` (with `Timeline`, `DatePicker` and the optional `SeriesChart`) + `GlobeView`/`ListView` + `TrackPanel`.
 
 ---
 
@@ -89,9 +102,10 @@ webapp/src/
 
 ### sonificationApi.ts
 
-Typed client for the backend (types are the exact shapes of `sonification/backend/FRONTEND_API.md`, v2.1):
+Typed client for the backend (types are the exact shapes of `sonification/backend/FRONTEND_API.md`; the file header cites v2.5; the backend is at v2.6, whose addition, `POST /api/zones/groove`, this client does not call). The selected points are sent as a compact `mask` (`utils/zoneMask.ts`: 0.1° bit grid, deflate via `CompressionStream`, base64; a few kB instead of up to 14 MB) whenever the browser can build one, otherwise as `points`:
 
 - `fetchZoneData(request, signal?)` → `POST /api/zones/zone-data` (`ZoneDataRequest`: `zone_id`, `zone_name`, `dataset_ids[]`, `points`, `time_period`, `aggregation: "mean"`; `ZoneDataResponse`: `dataset_ids` actually combined, `time_period`, `next_time_period`, `audio_data`, `values` per dataset, `point_count`)
+- `fetchZoneSeries(request, signal?)` → `POST /api/zones/series` (`ZoneSeriesRequest`: `dataset_ids[]`, `points`; `ZoneSeriesResponse`: `series` per dataset with `units`, `anomaly`, `start`, `yearly`, `values`, plus `missing`)
 - `fetchInstruments()` → `GET /api/instruments`
 - `fetchHealth()` → `GET /api/health`
 - `ApiError` with a `kind` (`backendUnavailable`, `serverPreparing`, `noDataForPeriod`, `unknown`); it reads the FastAPI `{detail}` body
@@ -138,13 +152,29 @@ const {
 
 There is no per-track volume (the server returns one mixed file); `setVolume` sets the master volume. `canPlay` is false when no zone or no track is selected.
 
+`useSonification` also returns `positionStore` (the fine position, read with `usePlaybackPosition` so only the components that need it re-render ~10 times a second), `timelineEnd`, `chunkValues` (values of every enabled track for the audible chunk) and `mainTrackId`.
+
 ### useInstruments Hook
 
-Builds the track list at runtime from `GET /api/instruments` (and `/api/health` for the `preparing_data` flag). Each `Track` carries the dataset id, instrument name, availability, data period and whether the data is real or simulated. Tracks the server has no data for are shown disabled. By default only the temperature track is on.
+Builds the track list at runtime from `GET /api/instruments` (and `/api/health` for the `preparing_data` flag). Each `Track` carries the dataset id, instrument name, role, availability, whether it is always playing, units, data period and its colour (from `data/trackColors.ts`). By default only the temperature track is on.
+
+### TrackPanel
+
+`components/controls/TrackPanel.tsx`, the inline "What do you want to hear?" section beside the globe. One toggle button (`aria-pressed`) per dataset with its colour dot, name, instrument, period and "only when present" note; animated bars mark the tracks sounding in the current chunk. The heading is a disclosure button (`aria-expanded`); the player's **Sounds** button toggles the same state (persisted with `useLocalStorageBoolean`, key `earth-jukebox-tracks-open`) and focuses the first row when opening.
+
+### DatePicker
+
+`components/player/DatePicker.tsx`, the date badge left of the timeline. A non-modal popover (`role="dialog"`) with Year and Month selects; months after the last data month are disabled. Focus goes to the Year select on open and back to the trigger on Go, Close or `Escape`; tabbing or clicking outside closes it. After Go it announces "Jumped to ...".
+
+### SeriesChart and useZoneSeries
+
+`useZoneSeries` calls `POST /api/zones/series` for the selected points and enabled tracks while the graph is on, and caches each series at module level by an area hash. `SeriesChart` draws one SVG line per track on the Timeline's axis (own scale per line, fixed dash pattern per track id, steps for yearly data), shares the hover position with the Timeline, seeks on click, and provides a text summary (`role="img"` label) and a visually hidden table of yearly means. The **Graph** toggle is persisted under `earth-jukebox-player-graph`.
 
 ### useZoneDataFrames Hook
 
 While the globe is in playback mode, loads the raw values of the selected zone for the month being played, for the datasets matching the enabled tracks. It uses `volumeData.ts` and `utils/npy.ts` to read the `.npy` files under `/data/` with HTTP Range requests (only the rows of the zone). Zones are capped at 3000 grid cells (`MAX_ZONE_CELLS`).
+
+`GlobeView` then removes the zone polygons and draws these values as **flowing spots** (`useSpotLayer`, layout in `flowSpots.ts`): each dataset scatters its own spots over the zone in its colour, the spot's area grows with the value and there is no spot below a threshold; close spots merge into patches with a faint light halo; temperature below normal is a ring, above normal a filled spot, so the value does not depend on colour alone. Spots are flat discs on the sphere drawn by the GPU as instanced three.js meshes (one per dataset, plus a ring mesh and a halo mesh), so an animation step only rewrites one matrix per spot. Sizes ease from one month to the next, with no easing under `prefers-reduced-motion`. A visually hidden table gives the same values.
 
 ---
 
@@ -172,8 +202,9 @@ interface Track {
   id: string;            // dataset_id sent in dataset_ids to POST /api/zones/zone-data
   label: string;
   instrument: string;    // e.g. "Piano (chords)"
-  available: boolean;    // false: no data on the server
-  realData: boolean;     // false: simulated
+  role: string;          // harmony, bass, melody, percussion, swell
+  available: boolean;    // the server lists only datasets it has data for
+  alwaysPlaying: boolean; // false: only audible while the phenomenon is present
   period: { start: string; end: string } | null;
   units: string | null;
   color: string;
@@ -184,7 +215,7 @@ interface Track {
 interface TrackState { id: string; enabled: boolean }
 ```
 
-`ZoneDataRequest` / `ZoneDataResponse` / `InstrumentInfo` are defined in `services/sonificationApi.ts`.
+`ZoneDataRequest` / `ZoneDataResponse` / `ZoneSeriesRequest` / `ZoneSeriesResponse` / `InstrumentInfo` are defined in `services/sonificationApi.ts`.
 
 ---
 
@@ -204,7 +235,7 @@ Every component must:
 </button>
 ```
 
-The app announces the current reading ("Now playing 1998: +0.6 °C vs normal"), loading, errors and the selected zone through permanently mounted `aria-live` regions. The List view is the screen-reader-friendly alternative to the globe, and the globe's data dots have a table equivalent.
+The app announces the current reading ("Now playing 1998: +0.6 °C vs normal"), loading, errors and the selected zone through permanently mounted `aria-live` regions. The List view is the screen-reader-friendly alternative to the globe, and the globe's data spots have a table equivalent.
 
 ---
 
@@ -218,12 +249,31 @@ Implemented in `AudioPlayerEnhanced.tsx` (global, ignored while typing in a fiel
 | `←` `→` | Seek backward / forward 2% of the timeline |
 | `Home` / `End` | Jump to start / end |
 | `M` | Mute / Unmute |
-| `Esc` | Close the track panel; on the globe, return to zone selection |
+| `Esc` | On the globe's playback view, return to zone selection (`GlobeView`); closes the date picker (`DatePicker`) |
 
-The Timeline slider handles `←` `→` `Home` `End` itself when focused. The skip buttons seek by 10% of the timeline.
+The Timeline slider handles its own keys when focused: `←` `→` (2%), `Shift` + `←` `→` (one month), `PageUp` / `PageDown` (one year forward / back), `Home` `End`. The skip buttons seek by 10% of the timeline.
 
 !!! note "No `?` help dialog"
     A `KeyboardShortcuts` modal component (`?`) exists but is not mounted in `App.tsx`, so `?` currently does nothing.
+
+---
+
+## In development: vinyl experience mode
+
+!!! warning "Not finished"
+    Vinyl mode is work in progress, present only in the webapp's working tree (uncommitted files). The backend now serves its endpoint, `POST /api/zones/groove` (API v2.6, see the [API reference](../api/reference.md#post-apizonesgroove)), but the work-in-progress webapp code does not call it yet: the sound is still a simulation, and the details below may change.
+
+An **experience switch** (`ExperienceModeSwitch`, toggle buttons with `aria-pressed`) above the globe chooses between **Time travel** (`'zones'`, the mode described on this page: one zone through the years) and **Vinyl** (`'vinyl'`: one month, the music spirals across the globe like a record). The choice is kept by `ExperienceModeContext` in `localStorage` (`earth-jukebox-experience-mode`); switching pauses the other mode's playback and announces the change. Both modes share the track selection of `TrackPanel`.
+
+What the current files do:
+
+- **Geometry** (`utils/vinylGeometry.ts`, pure maths): the globe is seen from above a centre point. A needle starts 70° from the centre and spirals in to 2°; one side has 10 chunks (`VINYL_CHUNKS`) of 30 s, one turn per chunk (5 minutes per side).
+- **Settings** (`useVinylSettings`, `VinylControls`): the month the record plays (clamped to the months covered by the enabled tracks, with a notice when clamped) and its centre, from a preset (`data/vinylPresets.ts`: poles, continents, oceans; default Europe), exact latitude / longitude, or a click on the globe.
+- **Playback** (`useVinylSonification`, `VinylPlayerBar`): a second `ChunkPlayer`, with grooves mapped onto synthetic periods so chaining, prefetch and abort are reused. The bar has play / pause, previous / next groove and a groove slider (1 to 10); global keys come from `usePlayerShortcuts`. Changing the centre or the month lifts the needle back to the rim.
+- **API** (`services/vinylApi.ts`): a planned contract `POST /api/vinyl/vinyl-data` (`dataset_ids`, `time_period`, `center`, `chunk_index` → one groove of audio, `next_chunk_index`, `path`, `values`) is written down but **never served**: the backend implemented `POST /api/zones/groove` instead (a fixed date, the `path` of points the needle crosses, `points_per_bar`, `radius_deg` → audio + `stops` with the values under the needle, on one global scale). `vinylApi.ts` does not call it yet; `fetchVinylChunk` simulates a groove with `POST /api/zones/zone-data` on the band of cells it sweeps: it plays the chosen month and the 9 after it, and the mean over the band rather than the cell under the needle (the reported `values` are those of the chosen month).
+- **Views**: `VinylGlobeView` (globe view) rotates the globe canvas under a fixed tonearm; `VinylRecordView` (list view, no WebGL) draws a schematic record and shows `VinylChunkTable` as a visible table; `VinylChunkTable` is the text alternative, one row per groove with its start, end, the region it crosses (`utils/regionName.ts`) and the values heard.
+
+Tests exist for `VinylControls`, `VinylPlayerBar`, `VinylGlobeView`, `useVinylSonification`, `vinylApi` and `vinylGeometry`.
 
 ---
 

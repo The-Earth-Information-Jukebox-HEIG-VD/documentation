@@ -60,8 +60,9 @@ We assign each climate variable to an orchestral instrument:
 | **CO2** | Contrabass | Deep, underlying presence like greenhouse gases |
 | **Rain** | Violins | Flowing, expressive like rainfall |
 | **Snow** | Glockenspiel | Crystalline, delicate |
-| **Lightning** | Xylophone | Sharp, percussive strikes |
-| **Night lights** | Harp | One held note per year, like the slow glow of cities |
+| **Fires** | Trombones | Brass that swells and holds, louder with more fires |
+| **Lightning** | Timpani | Thunder: more flashes, more hits |
+| **Night lights** | Synth pad | The only electronic sound for the only human-made signal, renewed each year then fading |
 
 Flute (dust) and French Horns (smoke) voices also exist in the composition engine, but no data is served for them yet.
 

@@ -1,11 +1,13 @@
 # Production Deployment
 
-Deploy Earth Information Jukebox to a server (VPS) with Docker Compose.
+Deploy EarthChestra (the Earth Information Jukebox project's app) to a server (VPS) with Docker Compose.
 
-!!! warning "Prerequisite: published images"
-    The production setup (`docker-compose.yml` + `docker-compose.prod.yml`) pulls images from GHCR, and **none has
-    been published yet**. Cut a release first ([Releasing images](ci-cd.md#releasing-images)), or build on the
-    server from the sibling repositories with `docker-compose.local.yml` (see [Docker](docker.md#quick-start-local-build)).
+!!! info "Published images"
+    The production setup (`docker-compose.yml` + `docker-compose.prod.yml`) pulls images from GHCR. Releases are
+    published: `v1.1.0` is tagged in `webapp`, `sonification` and `datasets`, so the images exist as `1.1.0`
+    (Git tag without the `v`). To publish a new version see [Releasing images](ci-cd.md#releasing-images); to build
+    on the server from the sibling repositories instead, use `docker-compose.local.yml`
+    (see [Docker](docker.md#quick-start-local-build)).
 
 ---
 
@@ -35,17 +37,17 @@ cp .env.example .env
 Then edit `.env`:
 
 ```bash
-WEBAPP_VERSION=1.0.0                   # pin each release instead of latest
-SONIFICATION_VERSION=1.0.0
-DATASETS_VERSION=1.0.0
-WEBAPP_PORT=80
-BACKEND_PORT=8000
-JUKEBOX_CORS=https://your-domain.com
+WEBAPP_VERSION=1.1.0                   # pin each release instead of latest (no "v")
+SONIFICATION_VERSION=1.1.0
+DATASETS_VERSION=1.1.0
+DOMAIN=example.com                     # webapp on DOMAIN, API on api.DOMAIN
+ACME_EMAIL=admin@example.com           # Let's Encrypt account
 ```
 
 !!! note
-    The file must be named `.env`: Compose reads it automatically. If `JUKEBOX_CORS` is not set,
-    `docker-compose.prod.yml` falls back to the placeholder `https://earth-jukebox.example.com`.
+    The file must be named `.env`: Compose reads it automatically. `WEBAPP_PORT` / `BACKEND_PORT` are not used in
+    production: Traefik owns ports 80/443 and the webapp and the backend publish no host ports. The backend's CORS
+    origins are `JUKEBOX_CORS_PROD`, by default built from the domain (`https://DOMAIN,https://www.DOMAIN`).
     The bundled webapp calls the API on the same origin (`/api`, proxied by nginx), so CORS only matters for
     other clients.
 
@@ -69,8 +71,10 @@ What the production override adds:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
-curl http://localhost:8000/api/health       # backend directly
-curl http://localhost/api/health            # through the webapp's nginx
+curl https://api.$DOMAIN/api/health        # backend through Traefik
+curl https://$DOMAIN/api/health            # through the webapp's nginx
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec backend \
+  curl -f http://localhost:8000/api/health  # inside the container (no host port in prod)
 ```
 
 On first start the backend converts the datasets in the background; wait until `preparing_data` is `false`.
@@ -110,9 +114,9 @@ webapp (~11 GB in total).
 
 | Measured at 1 CPU / 1.5 GB RAM | Result |
 |---|---|
-| First-start data preparation (6 datasets) | 53 s, peak 911 MiB |
+| First-start data preparation (6 datasets, measured before fires was added) | 53 s, peak 911 MiB |
 | Backend memory afterwards | ~350 MiB |
-| One 30 s chunk, all six instruments | ~1.7 s (expect 2-4 s on a cloud vCPU) |
+| One 30 s chunk, six instruments (there are now seven) | ~1.7 s (expect 2-4 s on a cloud vCPU) |
 
 ```bash
 # Optional on 2 GB RAM: 2 GB swap as a safety margin
@@ -120,9 +124,9 @@ sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
 sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
-# Data: clone once and keep only data/ (fires_2002_2026 is used by neither the backend nor the globe)
+# Data: clone once and keep only data/ (all seven folders are used)
 git clone --depth 1 git@github.com:The-Earth-Information-Jukebox-HEIG-VD/datasets.git
-mv datasets/data ~/jukebox-data && rm -rf datasets ~/jukebox-data/fires_2002_2026
+mv datasets/data ~/jukebox-data && rm -rf datasets
 ```
 
 `.env`:
@@ -142,6 +146,35 @@ folder's contents and running `docker compose restart backend`.
 
 ---
 
+## Behind an Existing Traefik (shared server)
+
+When the server already runs a Traefik for other sites (ports 80/443 taken), use `docker-compose.shared-traefik.yml`
+**instead of** `docker-compose.prod.yml`. It starts no Traefik and publishes no ports; it attaches the webapp and the
+backend to the existing Traefik's network and routes `DOMAIN`, `www.DOMAIN` (redirect to the apex) and `api.DOMAIN`
+through it, with http to https redirects. The Compose project is named `jukebox`, so it never mixes with another
+project, even one in a folder also called `deployment`.
+
+The existing Traefik needs entrypoints `http` and `https`, a certificate resolver `letsencrypt` and the Docker
+provider. Find its network with:
+
+```bash
+docker inspect -f '{{json .NetworkSettings.Networks}}' <traefik-container> | grep -oE '"[A-Za-z0-9_.-]+":\{' | tr -d '"{:'
+```
+
+`.env` (drop `:docker-compose.hostdata.yml` to use the datasets image instead of a host folder):
+
+```bash
+COMPOSE_FILE=docker-compose.yml:docker-compose.shared-traefik.yml:docker-compose.hostdata.yml
+TRAEFIK_NETWORK=traefik
+JUKEBOX_DATA_PATH=/home/debian/hackathon/jukebox-data
+DOMAIN=example.com
+```
+
+Memory limits are lower than with `docker-compose.prod.yml` (backend 1.5 GB, webapp 256 MB), so the stack cannot
+starve the other services. `ACME_EMAIL` is not used: certificates come from the existing Traefik's resolver.
+
+---
+
 ## Environment Variables
 
 ### Compose (`.env`)
@@ -152,9 +185,15 @@ folder's contents and running `docker compose restart backend`.
 | `SONIFICATION_VERSION` | Version of the `sonification` (backend) image |
 | `DATASETS_VERSION` | Version of the `datasets` image |
 | `TAG` / `DATA_TAG` | Legacy fallbacks (webapp + sonification / datasets), used only when the variables above are unset |
-| `WEBAPP_PORT` | Host port of the webapp (default 80) |
-| `BACKEND_PORT` | Host port of the backend (default 8000) |
-| `JUKEBOX_CORS` | Allowed CORS origins, comma-separated |
+| `WEBAPP_PORT` | Host port of the webapp (default 80; not published in prod / shared Traefik) |
+| `BACKEND_PORT` | Host port of the backend (default 8000; not published in prod / shared Traefik) |
+| `JUKEBOX_CORS` | Allowed CORS origins, comma-separated (development) |
+| `DOMAIN`, `ACME_EMAIL` | Domain served by Traefik; Let's Encrypt account email (prod) |
+| `JUKEBOX_CORS_PROD` | Backend CORS origins in prod / shared Traefik (default `https://DOMAIN,https://www.DOMAIN`) |
+| `TRAEFIK_VERSION` | Traefik image tag (default `v3.6`) |
+| `TRAEFIK_NETWORK` | Network of the existing Traefik (`docker-compose.shared-traefik.yml`) |
+| `JUKEBOX_DATA_PATH` | Absolute host folder with the datasets (`docker-compose.hostdata.yml`) |
+| `COMPOSE_FILE` | Compose files to load, `:`-separated; replaces the `-f` flags |
 
 `JUKEBOX_DATA_DIR` (`/app/data`) and `JUKEBOX_CACHE_DIR` (`/app/cache`) are fixed by the compose file and the
 volume mounts; there is no need to set them. The other backend variables are listed in
@@ -172,7 +211,7 @@ default so the browser goes through the nginx proxy.
 ### Backend Health Endpoint
 
 ```bash
-curl https://your-domain.com/api/health
+curl https://api.$DOMAIN/api/health
 ```
 
 Example response:
@@ -180,8 +219,8 @@ Example response:
 ```json
 {
   "status": "ok",
-  "version": "2.1",
-  "datasets": 6,
+  "version": "2.6",
+  "datasets": 7,
   "data_dir": "/app/data",
   "built_dir": "/app/cache/_datasets",
   "preparing_data": false,
@@ -228,9 +267,11 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
-A new `datasets` image does **not** refresh an existing `jukebox-data` volume (`data-init` skips when
-`/data/.initialized` exists). To update the data, remove the volume first or run `./scripts/init-data.sh <tag>`
-(see [Docker → Volume Management](docker.md#volume-management)).
+A new `datasets` image **does** refresh the `jukebox-data` volume: `data-init` stores a fingerprint of the image's
+data (`ls -lR /datasets | md5sum`) in `/data/.initialized` and, when it differs, empties the volume and copies the new
+data. The backend then rebuilds only the datasets that changed in its cache. To force a full re-copy, remove the
+volume, or run `./scripts/init-data.sh <version>` (see [Docker → Volume Management](docker.md#volume-management)).
+With `docker-compose.hostdata.yml`, replace the folder's contents and run `docker compose restart backend` instead.
 
 ---
 
@@ -252,10 +293,12 @@ was actually published.
 
 ```bash
 lsof -i :80
-lsof -i :8000
+lsof -i :443
 ```
 
-Change `WEBAPP_PORT` / `BACKEND_PORT` in `.env`.
+In production Traefik needs ports 80 and 443. If another Traefik already holds them, use
+[Behind an Existing Traefik](#behind-an-existing-traefik-shared-server). `WEBAPP_PORT` / `BACKEND_PORT` only apply
+without the production override.
 
 ### Out of Memory
 

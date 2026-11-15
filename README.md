@@ -16,22 +16,21 @@
 
 ## What is this?
 
-Earth Information Jukebox transforms NASA climate data into sound. Temperature anomalies become musical tones: warmer years sound higher, cooler years lower. An 8-instrument orchestra brings climate variables to life:
+**EarthChestra**, the Earth Information Jukebox project's app, transforms NASA climate data into sound. Temperature anomalies become musical tones: warmer years sound higher, cooler years lower. A 7-instrument orchestra, one instrument per dataset, brings climate variables to life:
 
 | Variable | Instrument | Role |
 |----------|------------|------|
 | Temperature | Piano | Chords (harmony) |
 | CO2 | Contrabass | Bass line |
-| Precipitation | Violins | Melody |
-| Dust | Flute | Melody |
-| Smoke | French Horns | Melody |
-| Lightning | Xylophone | Accents |
+| Precipitation (rain) | Violins | Melody |
 | Snowfall | Glockenspiel | Melody |
+| Lightning | Timpani | Percussion (thunder) |
+| Fires | Trombones | Swell |
+| Night lights | Synth pad | Swell (yearly) |
 
 ## Quick Links
 
 - [Documentation](https://the-earth-information-jukebox-heig-vd.github.io/documentation) - Full project documentation
-- [Live Demo](https://earth-jukebox.vercel.app) - Try the application
 - [Quick Start](https://the-earth-information-jukebox-heig-vd.github.io/documentation/getting-started/quickstart/) - Get running in 5 minutes
 
 ## Repositories
@@ -66,7 +65,7 @@ pip install mkdocs-material
 # Serve documentation locally
 mkdocs serve
 
-# Visit http://127.0.0.1:8000
+# Visit http://127.0.0.1:8001 (port 8000 is left to the sonification API)
 ```
 
 ## License

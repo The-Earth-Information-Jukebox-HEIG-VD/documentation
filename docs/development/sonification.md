@@ -93,21 +93,23 @@ Each climate variable has an assigned instrument, defined in the `ORCHESTRA` tab
 | `dataset_id` (internal variable) | Instrument | MIDI program | Role | Register (MIDI) | Always on |
 |---|---|---|---|---|---|
 | `temperature` (`surface_temperature`) | Piano (chords) | 0 | harmony | 48–72 | yes |
-| `co2` | Contrabass | 43 | bass | 28–50 | yes |
+| `co2` | Contrabass | 43 | bass | 40–62 | yes |
 | `precipitation` (rain) | Violins (melody) | 48 | melody | 67–91 | no |
 | `snow` (`snowfall`) | Glockenspiel (melody) | 9 | melody | 67–88 | no |
-| `lightning` | Xylophone | 13 | percussion (`timpani` role in the code) | 77–101 | no |
-| `night_lights` (`nightlights`) | Harp (melody) | 46 | melody | 60–84 | no |
+| `lightning` | Timpani | 47 | `timpani` (reported as `percussion` by the API) | 40–55 | no |
+| `fires` | Trombones | 57 | swell | 40–60 | no |
+| `night_lights` (`nightlights`) | Synth pad | 89 | swell | 62–81 | no |
 | (`aerosol_dust`) | Flute (melody) | 73 | melody | 72–93 | no |
 | (`aerosol_smoke`) | French Horns (melody) | 60 | melody | 53–74 | no |
 
-The "always on" instruments (temperature, CO2) are the foundation; the others play when the phenomenon is present, so an instrument entering is itself information. Dust and smoke exist in the orchestra but, in the deployed backend, have no dataset: only variables that have data are listed by `GET /api/instruments`.
+The "always on" instruments (temperature, CO2) are the foundation; the others play when the phenomenon is present, so an instrument entering is itself information. Dust and smoke exist in the orchestra but, in the deployed backend, have no dataset: only variables that have data are listed by `GET /api/instruments`, so seven instruments sound. The contrabass sits an octave higher than a real contrabass part (E2 to D4) and is re-bowed on every bar line, because laptop and phone speakers play almost nothing below about 100 Hz. The timpani replaced a xylophone that sounded too close to the glockenspiel; their hits per beat follow the flash density.
 
 Notes on the deployed datasets:
 
 - Temperature is an **anomaly** in °C (the piano plays the anomaly itself); `GET /api/instruments` reports its units as `degC anomaly`.
 - Lightning is the **share of the area with lightning** (0 to 1), not a flash count, and only exists between 55°S and 55°N.
-- Night lights are **yearly**: one value per year repeated for its 12 months, so the harp holds its note for a year and steps in January.
+- Fires are the **number of days of the month with a fire** (2002-07 to 2026-11). The trombones swell and hold, louder with more fires, below the piano's chords rather than as a melody inside them.
+- Night lights are **yearly**: one value per year repeated for its 12 months. The synth pad, the only electronic sound, starts at full level each January when the value changes and fades slowly over the year to a soft background (`fade=True`, `fade_floor=0.75`, `smooth=False` so the yearly steps are not blurred).
 - A variable is silent for the months its data does not cover, so one piece can mix series with different start dates.
 
 There are also regional palettes (`palette: "auto"` swaps in local instruments for the zone, e.g. sitar for India); they are defined in `PALETTES` in `orchestra.py` and listed by `GET /api/options` (engine API only).
@@ -122,13 +124,13 @@ There are also regional palettes (`palette: "auto"` swaps in local instruments f
 # sonification/music/orchestra.py
 ORCHESTRA = {
     # ...
-    "sea_level": dict(name="Sea level - Cello (melody)", role="melody", program=42, channel=8,
+    "sea_level": dict(name="Sea level - Cello (melody)", role="melody", program=42, channel=10,
                       low=36, high=60, gain=2.0, gate=0.03, levels=[0.35, 0.65],
                       level=0.80, pan=60),
 }
 ```
 
-Pick an unused MIDI `channel`. `always_on=True` makes it a foundation instrument; `gain` and `gate` control when it enters; `levels` are the density thresholds. Copy the closest existing entry and adjust.
+Pick an unused MIDI `channel` (0 to 8 are taken, 9 is the GM drum channel). `always_on=True` makes it a foundation instrument; `gain` and `gate` control when it enters; `levels` are the density thresholds. Copy the closest existing entry and adjust.
 
 ### 2. Produce the Intensity Map
 
@@ -215,6 +217,7 @@ The API tests are end-to-end and need data in `JUKEBOX_DATA_DIR` (or generate so
 ```bash
 cd sonification
 python -m pytest backend/test_api.py -q
+python -m pytest backend/test_groove.py -q         # vinyl mode (POST /api/zones/groove)
 python -m pytest backend/test_prepare_data.py -q   # raw-folder conversion
 python -m pytest simulation/test_build_monthly_dataset.py -q
 ```

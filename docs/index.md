@@ -16,13 +16,13 @@
 
 ## What is Earth Information Jukebox?
 
-Earth Information Jukebox makes climate data **audible**. By converting temperature anomalies, CO2 levels, rain, snow, lightning and night lights into music, we create an accessible way to experience and understand climate change.
+Earth Information Jukebox makes climate data **audible**. Its app, **EarthChestra**, converts temperature anomalies, CO2 levels, rain, snow, fires, lightning and night lights into music to create an accessible way to experience and understand climate change.
 
 - **Warmer years** sound **higher** in pitch
 - **Cooler years** sound **lower** in pitch
 - An **orchestra** brings the climate variables to life: one instrument per dataset
 
-Pick a zone on the globe (a continent, country, ocean or sea), choose which instrument tracks to hear, and press Play. The backend composes the orchestra from NASA gridded data for that zone and streams it as 30-second MP3 chunks, while the globe draws the raw dataset values month by month.
+Pick a zone on the globe (a continent, country, ocean or sea), choose which sounds to hear, and press Play. The backend composes the orchestra from NASA gridded data for that zone and streams it as 30-second MP3 chunks, while the globe draws the raw dataset values month by month.
 
 !!! info "Why Sonification?"
     An estimated 285 million people worldwide are visually impaired (WHO, 2010). Traditional climate visualizations - charts, maps, animations - are inaccessible to them. Sound provides an alternative pathway to understanding data.
@@ -79,11 +79,12 @@ Each climate variable is assigned an instrument (the live list comes from `GET /
 | CO2 | Contrabass | Bass line | 2002-09 → 2022-03 |
 | Rain | Violins | Melody | 2000-06 → 2026-11 |
 | Snow | Glockenspiel | Melody | 2000-06 → 2026-11 |
-| Lightning | Xylophone | Accents | 2017-03 → 2023-07 |
-| Night lights | Harp | Melody (one note per year) | 2012 → 2023 |
+| Fires | Trombones | Swell, below the chords | 2002-07 → 2026-11 |
+| Lightning | Timpani | Percussion (thunder) | 2017-03 → 2023-07 |
+| Night lights | Synth pad | Swell (one value per year, fading through the year) | 2012 → 2023 |
 
 !!! note
-    The composition engine also defines Flute (dust) and French Horns (smoke) voices, but no real data is served for them. A wildfire dataset (MODIS, 2002-2026) is in the `datasets` repository but is not sonified yet.
+    The composition engine also defines Flute (dust) and French Horns (smoke) voices, but no real data is served for them.
 
 ---
 

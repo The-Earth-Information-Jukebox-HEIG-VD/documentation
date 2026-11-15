@@ -7,8 +7,8 @@
 │                      Frontend (React + Vite)                     │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
-│  │  GlobeView / │  │AudioPlayer-  │  │ TrackSelector        │  │
-│  │  ListView    │  │Enhanced      │  │ (SlidingPanel)       │  │
+│  │  GlobeView / │  │AudioPlayer-  │  │ TrackPanel           │  │
+│  │  ListView    │  │Enhanced      │  │ (inline, aria-exp.)  │  │
 │  └──────────────┘  └──────────────┘  └──────────────────────┘  │
 │        │                  │                                     │
 │        │        ┌─────────┴─────────┐                           │
@@ -18,6 +18,7 @@
 │        │        │    ChunkPlayer    │ ◄── Web Audio API         │
 │        │        └───────────────────┘     (decodeAudioData)     │
 │  useZoneDataFrames ── reads /data/*.npy (HTTP Range)            │
+│  useZoneSeries ────── POST /api/zones/series → SeriesChart      │
 └─────────────────────────────────────────────────────────────────┘
          │ /data/                      │ /api (HTTP/JSON)
          │                             │
@@ -25,6 +26,7 @@
 │ Datasets volume   │   │            Backend (FastAPI)             │
 │ (nginx / Vite dev │   │  GET  /api/health      /api/instruments  │
 │  plugin)          │   │  POST /api/zones/zone-data → 30 s MP3    │
+│                   │   │  POST /api/zones/series → monthly values │
 └───────────────────┘   │  Music engine composes the orchestra     │
                         └──────────────────────────────────────────┘
 ```
@@ -39,11 +41,12 @@ See `sonification/backend/FRONTEND_API.md` for the exact contract of the webapp'
 
 1. **Page load** → `useInstruments` calls `GET /api/instruments` (and `/api/health`) to build the track list
 2. **User selects a zone** (globe or list) → the zone's grid points are stored; Play becomes available
-3. **Play** → `useSonification` → `ChunkPlayer` sends `POST /api/zones/zone-data` with the zone points, the enabled tracks (`dataset_ids`) and a time period
+3. **Play** → `useSonification` → `ChunkPlayer` sends `POST /api/zones/zone-data` with the zone (as a compact `mask` when the browser can build one, else the points), the enabled tracks (`dataset_ids`) and a time period
 4. **Decode and play** → the response carries 30 s of MP3 (base64) and `next_time_period`; `ChunkPlayer` decodes it with `decodeAudioData` and plays it
 5. **Chaining** → at 20% of the current chunk, the next one is prefetched with `next_time_period`; it is scheduled to start exactly `duration_s` after the previous one (the reverb tail overlaps), so playback is gapless. `next_time_period: null` means the end of the data
 6. **Progress updates** → `onProgress` / `onChunk` callbacks → React state → timeline, year display, screen reader announcements
-7. **Globe** → during playback, `useZoneDataFrames` reads the raw dataset values of the zone (month by month) from `/data/` and the globe draws them as coloured dots
+7. **Globe** → during playback, `useZoneDataFrames` reads the raw dataset values of the zone (month by month) from `/data/` and the globe draws them as flowing spots (GPU-instanced discs, size from the value)
+8. **Data graph** (when **Graph** is on) → `useZoneSeries` sends `POST /api/zones/series` once for the zone and the enabled tracks; `SeriesChart` draws the whole monthly series on the timeline's axis (the same means the music plays)
 
 Seeking, changing the zone or toggling a track aborts in-flight requests and restarts from the new position.
 

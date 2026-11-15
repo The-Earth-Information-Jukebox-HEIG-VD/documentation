@@ -1,6 +1,6 @@
 # Accessibility
 
-Earth Information Jukebox is designed to be accessible to all users, including those with visual impairments, motor disabilities, and other accessibility needs.
+**EarthChestra**, the Earth Information Jukebox project's app, is designed to be accessible to all users, including those with visual impairments, motor disabilities, and other accessibility needs.
 
 ---
 
@@ -19,7 +19,7 @@ We target **WCAG 2.1 AA** and check the interface with automated tools (axe-core
 
 ### Full Keyboard Access
 
-The player, track panel, zone selection (list view) and language menu can all be used with the keyboard.
+The player, the "What do you want to hear?" panel, the date picker, the data graph toggle, zone selection (list view) and the language menu can all be used with the keyboard.
 
 | Key | Action |
 |-----|--------|
@@ -27,13 +27,13 @@ The player, track panel, zone selection (list view) and language menu can all be
 | `Shift + Tab` | Move to previous element |
 | `Enter` / `Space` | Activate the focused button or link |
 | `Arrow keys` | Move within sliders and menus |
-| `Escape` | Close the track panel and the language menu; leave the globe and return to zone selection |
+| `Escape` | Close the language menu and the **Go to a date** popover; leave the globe's playback view and return to zone selection (the track panel is not a dialog and does not close with `Escape`) |
 
 A **Skip to content** link is the first focusable element on the page.
 
 ### Playback Shortcuts
 
-These shortcuts work anywhere on the page, except while focus is in a text field, a slider or a dialog, or when a modifier key (`Ctrl`, `Cmd`, `Alt`) is held.
+These shortcuts work anywhere on the page, except while focus is in a text field, a select, a slider or a dialog (such as the date picker), while a modal is open, or when a modifier key (`Ctrl`, `Cmd`, `Alt`) is held.
 
 | Key | Action |
 |-----|--------|
@@ -44,7 +44,7 @@ These shortcuts work anywhere on the page, except while focus is in a text field
 | `End` | Jump to end |
 | `M` | Mute / Unmute |
 
-The timeline slider (focused) supports `←`, `→`, `Home` and `End` with the same 2% step. The volume slider is a native range input: use `←` / `→` (or `↑` / `↓`) for 5% steps once it is focused. There are also skip backward / forward buttons (10% each).
+The timeline slider (focused) supports `←` / `→` (2% step), `Shift` + `←` / `→` (one month), `Page Down` / `Page Up` (one year back / forward), `Home` and `End`. The volume slider is a native range input: use `←` / `→` (or `↑` / `↓`) for 5% steps once it is focused. There are also skip back / forward buttons ("Skip back 10%", "Skip forward 10%"), each moving 10% of the timeline.
 
 ### Play button when no zone is selected
 
@@ -72,6 +72,8 @@ Other screen readers should work but are not regularly tested.
 - All interactive elements with an accessible name; icon-only buttons have `aria-label`, icons are `aria-hidden`
 - Play / pause state: the button label switches between "Play" and "Pause"
 - Timeline and volume as sliders with `aria-valuenow` and a spoken `aria-valuetext` (year, volume percent)
+- The date button ("Go to a date, currently Mar 1998") and, after **Go**, where playback jumped ("Jumped to March 1998")
+- The number of selected sounds on the **Sounds** button ("Sounds: 2 selected") and its expanded / collapsed state
 - Selected zone ("zone selected")
 - Loading, error and end-of-data messages
 - Data values while playing, for example "now playing: ... year" (see [Current Value Announcements](#current-value-announcements))
@@ -120,8 +122,8 @@ A **high contrast** theme (black background, white text, 2px borders) and a **co
 
 ### Not Relying on Color Alone
 
-- The globe legend and track panel use text labels next to colors
-- Track availability and real / simulated data are shown as text badges
+- The globe legend, the track panel and the data graph use text labels next to colors; graph lines also differ by dash pattern
+- Track availability and "only when present" are shown as text
 - Warm / cool markers (▲ / ▼) are available in color-blind mode
 
 ### Focus Indicators
@@ -145,7 +147,9 @@ Animations are switched off when the system setting `prefers-reduced-motion: red
 .reduced-motion,
 .reduced-motion * {
   animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 ```
 
@@ -184,11 +188,15 @@ Audio never plays automatically. You must explicitly start playback, giving you 
 
 ### Labeled Controls
 
-Controls have accessible names (visible label or `aria-label`), including the volume slider, the timeline, the track checkboxes and the zone type toggle buttons (`aria-pressed`).
+Controls have accessible names (visible label or `aria-label`), including the volume slider, the timeline, the track toggle buttons (`aria-pressed`, named by dataset and instrument, with the period as description), the **Graph** toggle (`aria-pressed`) and the zone type toggle buttons (`aria-pressed`).
 
 ### Dialogs and Panels
 
-The track panel is a modal (`aria-modal="true"`, closes with `Escape`, focus moves to its close button). The shortcuts help dialog, once mounted, traps focus. While a dialog is open, playback shortcuts are disabled.
+The **"What do you want to hear?"** panel is an inline section of the page, not a modal. Its heading is a disclosure button (`aria-expanded`, `aria-controls`) that hides the list and leaves a visible "N tracks selected" summary; the player's **Sounds** button carries the same `aria-expanded` state, and when it opens the panel it moves focus to the first track. Its live region (loading, "server preparing", "no track selected") stays mounted while the panel is collapsed. `Escape` does not close it.
+
+**Go to a date** is a non-modal popover (`role="dialog"` labelled by its "Go to a date" heading) opened from the date button (`aria-haspopup="dialog"`, `aria-expanded`). Focus moves to the Year select when it opens; it holds native Year and Month selects (months after the last data month are disabled) and **Close** / **Go** buttons. `Escape` or **Close** returns focus to the date button; tabbing out or clicking outside closes it. Playback shortcuts are ignored inside it.
+
+The shortcuts help dialog, once mounted, traps focus. While a modal is open, playback shortcuts are disabled.
 
 ### Error Messages
 
@@ -202,8 +210,20 @@ Errors (backend unavailable, track list failed, dataset loading failed) are show
 
 The globe canvas has a text description (`role="img"` with a label), and the overlay controls stay reachable. Zones can also be chosen from a **list view**, which is fully keyboard operable; use the view toggle to switch.
 
-!!! note
-    There is no hidden data table for the dots drawn on the globe yet; the current value announcement is the non-visual alternative.
+During playback the globe also has a visually hidden table (caption with the zone and month) of the values it draws.
+
+### Vinyl Mode (in development)
+
+In **Vinyl** mode the player bar has the same Play / Pause and Sounds buttons; the shortcuts above apply, but `←` / `→` move to the previous / next groove and `Home` / `End` to the first / last. The groove slider is a native range input with a label ("Groove k of n") and a spoken value (groove, elapsed and total time). The record image is `role="img"` with a label (centre and month), and a visually hidden table with a caption lists the values of the playing chunk. `Escape` has no function in this mode.
+
+### Data Graph
+
+The **Graph** toggle in the player shows a chart of the selected zone's data (`SeriesChart`). Its text alternatives:
+
+- the SVG is `role="img"` with a **text summary** as its label: the zone, the period, the datasets, the note that each line has its own scale, and for each line its lowest and highest value with their dates;
+- a visually hidden **table** "Yearly average of each dataset in the selected area", one row per year and one column per dataset ("No data" where a dataset has none);
+- a visible legend with each line's name and value at the playback (or hover) date; lines differ by colour **and** dash pattern;
+- loading, empty and error states as text (errors with `role="alert"` and a **Retry** button).
 
 ### Current Value Announcements
 
@@ -261,7 +281,7 @@ Work in progress, not a certified conformance claim.
 
 ### Perceivable
 
-- [x] Text alternatives for icons and the globe canvas
+- [x] Text alternatives for icons, the globe canvas and the data graph (summary + table)
 - [ ] Transcript for the audio (component written, not yet mounted)
 - [x] Content adaptable (semantic HTML, landmarks)
 - [ ] Distinguishable (AA contrast targeted, not fully audited)
@@ -277,7 +297,7 @@ Work in progress, not a certified conformance claim.
 
 - [x] Interface available in English, French and German
 - [x] Error messages in text, announced to screen readers
-- [ ] Page language attribute is `en` in `index.html`; check it follows the selected language
+- [x] Page language: `index.html` starts as `en`, and the `lang` attribute follows the selected language (English, French, German)
 
 ### Robust
 
