@@ -75,6 +75,10 @@ For each track the panel shows:
 
 The track list comes from the server, so it can change as new data is added. Temperature is on by default. At least one track must be on to play; with none, the player shows a **Choose sounds** link that opens the panel.
 
+### Choose the Music Style
+
+The **Music style** menu above the sounds list chooses how the data is played. **Orchestra** (the default) and **Realistic sounds** (the sound of each phenomenon: rain, fire, thunder, a heartbeat for the temperature) are grouped as **Recommended** (hover the (i) next to the label to read why): they are the styles we worked on most, and they carry the climate message most clearly. The other styles (ragtime, swing, rock'n'roll, funk, synth-pop, house, trap) are under **Just for fun**: the same data, in another genre, to play with.
+
 ### Choose the Time
 
 There is no duration field. The timeline always spans the period covered by the enabled tracks (for temperature, 1880 to 2025):
@@ -104,6 +108,12 @@ There is no Stop button: pause, then seek to the start (Home) to begin again. Th
 
 When you press Play, the globe zooms to your zone and draws the **real dataset values** behind the sound as coloured spots (bigger where the value is higher; below-normal temperature is a ring), growing and shrinking month by month in step with the music. A legend lists the datasets with their value ranges, and a table with the same values is available to screen readers. Use **Change zone** (or Escape) to go back to zone selection; this pauses playback.
 
+### One Month Through the Years
+
+The **Months** selector in the player chooses what the timeline plays: **Every month** (the default), or one month only, for example **Only July**, to follow July from 1880 to 2025 with the tracks you enabled. The timeline, the date, the globe and the data graph then show that month of each year (one point per year on the graph, and a table of that month's values for screen readers); `Shift` + `←` / `→` on the timeline moves one year. The app remembers the choice.
+
+Each bar of music is then one year: the instruments are scaled on that month over all the years, so a warmer July is a higher note than a colder July.
+
 ### The Data Graph
 
 Press **Graph** in the player to show a chart of the data you are hearing, above the timeline and on the same time axis. It draws one line per enabled track for the selected zone, in the track's colour and with its own dash pattern; each line uses its own scale, and anomalies (temperature) mark "0 = normal". Night lights, a yearly value, are drawn as steps. The legend gives each line's value at the playback position, or at the date you hover on the chart or the timeline; clicking the chart seeks there. Screen readers get a text summary (the lowest and highest value of each line, with their dates) and a table of yearly averages. The graph needs a zone and at least one track; the app remembers whether it was on.
@@ -122,7 +132,7 @@ If audio takes a moment to load you see "Loading audio for 1950…". If the serv
 | `M` | Mute / Unmute |
 | `Esc` | Leave the playback view of the globe (back to zone selection), or close **Go to a date** |
 
-When the **timeline** is focused it also accepts `Shift` + `←` / `→` (one month back / forward) and `Page Down` / `Page Up` (one year back / forward). When the volume slider is focused, the arrow keys change the volume. Shortcuts are ignored while you type in a field or while a dialog is open.
+When the **timeline** is focused it also accepts `Shift` + `←` / `→` (one month back / forward; one year with a single month chosen in **Months**) and `Page Down` / `Page Up` (one year back / forward). When the volume slider is focused, the arrow keys change the volume. Shortcuts are ignored while you type in a field or while a dialog is open.
 
 !!! note
     A `?` keyboard-help dialog exists in the code but is not currently displayed, so `?` has no effect.

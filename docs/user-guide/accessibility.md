@@ -52,8 +52,7 @@ Until a zone is selected (and at least one track is enabled), the Play button is
 
 ### Help
 
-!!! note
-    A keyboard shortcuts dialog (`KeyboardShortcuts` component, opened with `?`) exists in the code but is not yet mounted in the app, so `?` currently does nothing. Its text also still says "5%" for seeking; the real step is 2%.
+There is no keyboard shortcuts dialog yet: `?` does nothing. The shortcuts are listed on this page.
 
 ---
 
@@ -101,10 +100,7 @@ Navigate by landmark using your screen reader:
 
 ## Audio Transcript
 
-!!! note
-    An `AudioTranscript` component (explanation of the sonification mapping) exists in the code but is **not yet mounted** in the app. There is currently no "Audio Transcript" button and no `T` shortcut. Until it is wired in, the text alternatives are the live announcements of the current value and the visible data on the globe.
-
-The planned transcript explains how data maps to sound (warmer values sound higher, cooler lower), what each instrument represents and the time period covered.
+There is no separate audio transcript yet (no "Audio Transcript" button, no `T` shortcut). The text alternatives are the live announcements of the current value, the hidden data tables of the globe and the graph, and the About page, which explains how data maps to sound.
 
 ---
 
@@ -132,7 +128,7 @@ All focusable elements get a visible focus ring:
 
 ```css
 :focus-visible {
-  outline: 3px solid var(--color-primary); /* #1a73e8 */
+  outline: 3px solid var(--color-primary); /* #f5d078, the logo's label yellow */
   outline-offset: 2px;
 }
 ```
@@ -218,7 +214,7 @@ In **Vinyl** mode the player bar has the same Play / Pause and Sounds buttons; t
 
 #### Music style
 
-The **Music style** control (above the sounds list, in both modes) is a native labelled `<select>`. The description of the chosen style is its hint, read after the name (`aria-describedby`). Choosing a style is announced once, politely ("Music style: Funk"); a style restored from your last visit or a reloaded list is not announced. The global player keys (Space, arrows, Home/End, M) are ignored while the select has focus, so the arrows and letters pick a style. In zone mode, changing the style keeps your place: the music goes on from the current month in the new style. In vinyl mode it restarts the record from the edge.
+The **Music style** control (above the sounds list, in both modes) is a native labelled `<select>`. The description of the chosen style is its hint, read after the name (`aria-describedby`). Choosing a style is announced once, politely ("Music style: Funk"); a style restored from your last visit or a reloaded list is not announced. The global player keys (Space, arrows, Home/End, M) are ignored while the select has focus, so the arrows and letters pick a style. The styles are in two labelled groups, **Recommended** (Orchestra and Realistic sounds) and **Just for fun** (the others), which screen readers announce as group names. The (i) button next to the label (hover, focus or click; Escape closes it) says why, and the same text is part of the select's description: the recommended styles are the ones the team worked on most and carry the climate message most clearly; with a fun style selected it adds that the changes in the data are easier to hear with the recommended ones. In zone mode, changing the style keeps your place: the music goes on from the current month in the new style. In vinyl mode it restarts the record from the edge.
 
 #### What the needle travels through
 

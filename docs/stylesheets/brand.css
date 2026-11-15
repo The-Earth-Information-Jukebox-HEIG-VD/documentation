@@ -1,0 +1,37 @@
+/* EarthChestra brand colours, taken from the logo (see webapp/src/styles/variables.css) */
+
+/* Navy header in both schemes, with the logo's label yellow as accent */
+:root,
+[data-md-color-scheme="default"],
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #071327;
+  --md-primary-fg-color--light: #0f203e;
+  --md-primary-fg-color--dark: #071327;
+  --md-primary-bg-color: #e8eaed;
+  --md-primary-bg-color--light: #b0b6bc;
+}
+
+/* Light scheme: yellow fails as text on white, so links use the dark ocean blue (7.3:1) */
+[data-md-color-scheme="default"] {
+  --md-accent-fg-color: #2e5598;
+  --md-accent-fg-color--transparent: rgba(46, 85, 152, 0.1);
+  --md-typeset-a-color: #2e5598;
+}
+
+/* Dark scheme: navy background, yellow links (13:1) */
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #071327;
+  --md-default-bg-color--light: #0f203e;
+  --md-code-bg-color: #0f203e;
+  --md-footer-bg-color: #071327;
+  --md-footer-bg-color--dark: #071327;
+  --md-accent-fg-color: #fbe3a6;
+  --md-accent-fg-color--transparent: rgba(245, 208, 120, 0.12);
+  --md-typeset-a-color: #f5d078;
+}
+
+/* The logo is a round disc: give it a little more room than the default icon */
+.md-header__button.md-logo img {
+  height: 2rem;
+  width: 2rem;
+}

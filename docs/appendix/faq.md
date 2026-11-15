@@ -117,10 +117,7 @@ Yes! The app is designed with accessibility as a core feature:
 
 ### Is there a text alternative to the audio?
 
-Partly. The About page explains how data maps to sound, and the live region announces the current value of the main track while playing.
-
-!!! note
-    An `AudioTranscript` component (explanation and data table) exists in the webapp code but is not currently shown in the interface.
+Partly. The About page explains how data maps to sound, and the live region announces the current value of the main track while playing. The globe and the data graph also have hidden data tables for screen readers.
 
 ---
 

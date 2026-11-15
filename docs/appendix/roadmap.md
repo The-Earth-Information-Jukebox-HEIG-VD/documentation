@@ -65,8 +65,8 @@ Future plans and features for Earth Information Jukebox and its app, EarthChestr
 - [ ] Save/load compositions
 - [ ] Share compositions via URL
 - [ ] User accounts and preferences
-- [ ] Show the audio transcript (the `AudioTranscript` component exists but is not mounted)
-- [ ] Keyboard shortcuts help dialog on `?` (the `KeyboardShortcuts` component exists but is not mounted)
+- [ ] Audio transcript (how data maps to sound, per instrument)
+- [ ] Keyboard shortcuts help dialog on `?`
 - [ ] Guided tours for new users
 - [ ] Mobile-optimized interface
 

@@ -68,9 +68,7 @@ webapp/src/
 │   ├── controls/               # TrackPanel, ViewModeToggle, ZoneViewSelector, LanguageSelector,
 │   │                           # InfoTooltip; ExperienceModeSwitch, VinylControls
 │   ├── moments/                # Key moments section
-│   ├── layout/ about/          # Header, Footer, Navigation, About page
-│   └── (legacy, not mounted)   # AudioPlayer, DataVisualizer, DataSelector, InfoPanel,
-│                               # KeyboardShortcuts, AudioTranscript
+│   └── layout/ about/          # Header, Footer, Navigation, About page
 ├── contexts/                   # AccessibilityContext, ViewModeContext, ExperienceModeContext
 ├── i18n/                       # EN / FR / DE (common.json, player.json)
 ├── utils/                      # npy reader, zone cells, zoneMask (compact `mask`), geometry, reading formatter, vinylGeometry, regionName
@@ -79,8 +77,21 @@ webapp/src/
 └── main.tsx
 ```
 
-!!! note "Legacy components"
-    `AudioPlayer`, `DataVisualizer`, `DataSelector`, `InfoPanel`, `KeyboardShortcuts`, `AudioTranscript` and `useAudioContext` still exist in the repository but `App.tsx` does not use them. The live UI is `AudioPlayerEnhanced` (with `Timeline`, `DatePicker` and the optional `SeriesChart`) + `GlobeView`/`ListView` + `TrackPanel`.
+The live UI is `AudioPlayerEnhanced` (with `Timeline`, `DatePicker` and the optional `SeriesChart`) + `GlobeView`/`ListView` + `TrackPanel`.
+
+### Visual identity
+
+The palette comes from the logo (the Earth drawn as a vinyl record; source in `webapp/design/logo-source.png`, web sizes in `webapp/public/`). Tokens live in `src/styles/variables.css`:
+
+| Token | Value | Use |
+|---|---|---|
+| `--color-primary` | `#f5d078` (label yellow) | buttons, links, focus ring, selected fills |
+| `--color-on-primary` | `#0a0e17` | text and icons on a yellow fill (never white) |
+| `--color-secondary` | `#4a6fc7` (ocean blue) | graphics only; `--color-secondary-text` `#8ea8e6` for blue text |
+| `--color-land` | `#5a8c7c` (land green) | graphics; `--color-land-text` `#8fc3ae` for text |
+| `--color-background` / `--color-surface` | `#071327` / `#0f203e` | deep ocean blue (the logo's ocean, darkened) for the page and panels |
+
+Areas are separated by surface tone and spacing, not borders. Borders remain only on form controls (`--color-control-border`, at least 3:1), on data marks and in high contrast mode. Track colours (`data/trackColors.ts`) are data, not brand: the lightning yellow is close to the label yellow, so selected states next to track dots stay neutral.
 
 ---
 
@@ -254,7 +265,7 @@ Implemented in `AudioPlayerEnhanced.tsx` (global, ignored while typing in a fiel
 The Timeline slider handles its own keys when focused: `←` `→` (2%), `Shift` + `←` `→` (one month), `PageUp` / `PageDown` (one year forward / back), `Home` `End`. The skip buttons seek by 10% of the timeline.
 
 !!! note "No `?` help dialog"
-    A `KeyboardShortcuts` modal component (`?`) exists but is not mounted in `App.tsx`, so `?` currently does nothing.
+    There is no keyboard shortcuts dialog, so `?` does nothing.
 
 ---
 

@@ -8,16 +8,18 @@ repo_name: The-Earth-Information-Jukebox-HEIG-VD/documentation
 
 theme:
   name: material
+  logo: assets/logo.png
+  favicon: assets/favicon.png
   palette:
     - scheme: default
-      primary: blue
-      accent: cyan
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - scheme: slate
-      primary: blue
-      accent: cyan
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -31,6 +33,9 @@ theme:
     - content.tabs.link
   icon:
     repo: fontawesome/brands/github
+
+extra_css:
+  - stylesheets/brand.css
 
 nav:
   - Home: index.md
