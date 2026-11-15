@@ -130,7 +130,7 @@ A **high contrast** theme (black background, white text, 2px borders) and a **co
 - Track availability and "only when present" are shown as text
 - Warm / cool markers (▲ / ▼) are available in color-blind mode
 
-The seven track colors come in **two palettes**, one for dark backgrounds (globe, legend, dark theme) and one for light backgrounds (track panel and data graph in the light theme). Each light color is a darker shade of the same hue, so an instrument keeps its identity across themes. Both palettes were checked with a color-vision simulator (protanopia, deuteranopia) comparing every pair of tracks, not only neighbours, and every color reaches 3:1 against its background:
+The eight track colors come in **two palettes**, one for dark backgrounds (globe, legend, dark theme) and one for light backgrounds (track panel and data graph in the light theme). Each light color is a darker shade of the same hue, so an instrument keeps its identity across themes. Both palettes were checked with a color-vision simulator (protanopia, deuteranopia) comparing every pair of tracks, not only neighbours, and every color reaches 3:1 against its background:
 
 | Track | Dark background | Light background |
 |-------|-----------------|------------------|
@@ -141,6 +141,7 @@ The seven track colors come in **two palettes**, one for dark backgrounds (globe
 | Lightning | `#ffe815` | `#998b01` |
 | Night lights | `#38b484` | `#027652` |
 | Fires | `#da154c` | `#d51952` |
+| Sea ice | `#834bff` | `#8f75f1` |
 
 Color is still never the only cue: track names are always written next to their dot or line.
 

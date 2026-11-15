@@ -83,15 +83,18 @@ The live UI is `AudioPlayerEnhanced` (with `Timeline`, `DatePicker` and the opti
 
 The palette comes from the logo (the Earth drawn as a vinyl record; source in `webapp/design/logo-source.png`, web sizes in `webapp/public/`). Tokens live in `src/styles/variables.css`:
 
-| Token | Value | Use |
-|---|---|---|
-| `--color-primary` | `#f5d078` (label yellow) | buttons, links, focus ring, selected fills |
-| `--color-on-primary` | `#0a0e17` | text and icons on a yellow fill (never white) |
-| `--color-secondary` | `#4a6fc7` (ocean blue) | graphics only; `--color-secondary-text` `#8ea8e6` for blue text |
-| `--color-land` | `#5a8c7c` (land green) | graphics; `--color-land-text` `#8fc3ae` for text |
-| `--color-background` / `--color-surface` | `#071327` / `#0f203e` | deep ocean blue (the logo's ocean, darkened) for the page and panels |
+| Token | Dark theme | Light theme | Use |
+|---|---|---|---|
+| `--color-primary` | `#f5d078` (label yellow) | `#f5d078` | buttons and selected fills (in light, selected fills add a navy `--selected-ring`) |
+| `--color-on-primary` | `#071327` | `#071327` | text and icons on a yellow fill (never white) |
+| `--color-primary-text` | `#f5d078` | `#7a5500` | the rare yellow-as-text use (yellow fails as text on white) |
+| `--color-link` | `#fbe3a6` | `#2e5598` | links |
+| `--color-focus` | `#f5d078` | `#2e5598` | the 3px `:focus-visible` ring |
+| `--color-secondary` | `#4a6fc7` (ocean blue) | `#4a6fc7` | graphics only; `--color-secondary-text` (`#8ea8e6` / `#2e5598`) for blue text |
+| `--color-land` | `#5a8c7c` (land green) | `#3f7a66` | graphics; `--color-land-text` (`#8fc3ae` / `#2f6b57`) for text |
+| `--color-background` / `--color-surface` | `#071327` / `#0f203e` | `#f6f7fb` / `#ffffff` | page and panels (dark: the logo's ocean, darkened) |
 
-Areas are separated by surface tone and spacing, not borders. Borders remain only on form controls (`--color-control-border`, at least 3:1), on data marks and in high contrast mode. Track colours (`data/trackColors.ts`) are data, not brand: the lightning yellow is close to the label yellow, so selected states next to track dots stay neutral.
+Areas are separated by surface tone and spacing, not borders. Borders remain only on form controls (`--color-control-border`, at least 3:1), on data marks and in high contrast mode. Track colours (`data/trackColors.ts`, one palette per theme, see [Light and dark themes](#light-and-dark-themes)) are data, not brand: the lightning yellow is close to the label yellow, so selected states next to track dots stay neutral.
 
 ---
 
