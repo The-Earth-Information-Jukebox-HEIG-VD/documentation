@@ -143,6 +143,9 @@ The eight track colors come in **two palettes**, one for dark backgrounds (globe
 | Fires | `#da154c` | `#d51952` |
 | Sea ice | `#f7f4ee` (ice white) | `#8f75f1` |
 
+!!! note
+    Sea ice on dark backgrounds (`#f7f4ee`, ice white) is the one exception still under review: the validator places it close to snow for people with protanopia. The track name next to each dot and the line's own dash pattern in the graph keep the two apart.
+
 Color is still never the only cue: track names are always written next to their dot or line.
 
 ### Focus Indicators
