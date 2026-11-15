@@ -87,7 +87,7 @@ The track list comes from the server, so it can change as new data is added. Tem
 
 ### Choose the Music Style
 
-The **Music style** menu above the sounds list chooses how the data is played. **Orchestra** (the default) and **Realistic sounds** (the sound of each phenomenon: rain, fire, thunder, a heartbeat for the temperature) are grouped as **Recommended** (hover or focus the (i) next to the label to read why): they are the styles we worked on most, and they carry the climate message most clearly. The other styles (ragtime, swing, rock'n'roll, funk, synth-pop, house, trap) are under **Just for fun**: the same data, in another genre, to play with. The style list comes from the server (`GET /api/genres`), and the instrument names in the sounds panel follow the chosen style.
+The **Music style** menu above the sounds list chooses how the data is played. **Orchestra** (the default) and **Realistic sounds** (the sound of each phenomenon: rain, fire, thunder, a heartbeat for the CO2) are grouped as **Recommended** (hover or focus the (i) next to the label to read why): they are the styles we worked on most, and they carry the climate message most clearly. The other styles (ragtime, swing, rock'n'roll, funk, synth-pop, house, trap) are under **Just for fun**: the same data, in another genre, to play with. The style list comes from the server (`GET /api/genres`), and the instrument names in the sounds panel follow the chosen style.
 
 ### Choose the Time
 
@@ -122,9 +122,9 @@ When you press Play, the globe zooms to your zone and draws the **real dataset v
 
 ### Key Events
 
-Under the globe, 15 **Key events** cards link the data to real events: three El Niño episodes (2009–10, 2015–16, 2023–24), wildfires (Indonesia 2015, Black Summer 2019–20, California 2020, Yakutia 2021, Quebec 2023), floods and storms (Hurricane Harvey 2017, Pakistan 2022, Storm Daniel 2023, UAE and Oman 2024), snowstorms (Filomena and Uri, 2021) and the Hunga Tonga eruption (2022). With a zone selected, only that zone's events are shown.
+Under the globe, 22 **Key events** cards link the data to real events: the 2015–16 El Niño, heatwaves and droughts (Russia 2010, United States 2012, Europe 2022), sea ice record lows (Arctic 2012, Antarctic 2023, Arctic winter 2025), wildfires (Indonesia 2015, Black Summer 2019–20, California 2020, Yakutia 2021, Quebec and NWT–Alberta 2023, Amazon 2024), floods and storms (Hurricane Harvey 2017, Pakistan 2022, Storm Daniel 2023, UAE and Oman 2024), snowstorms (Beast from the East 2018, Filomena and Uri 2021) and the Hunga Tonga eruption (2022). With a zone selected, only that zone's events are shown.
 
-Each card gives the dataset you will hear, the zone, the months when the event shows in the data, and when it really happened; photos have alt text. Pressing **Play** on a card selects the zone if needed, keeps only the event's dataset on, and moves the timeline to a month before the event, so you hear it arrive. "Playing now" appears on the card while the music is inside the event's dates.
+Each card gives the datasets that show the event, the zone, the months when the event shows in the data, and when it really happened; photos have alt text. Pressing **Play** on a card selects the zone if needed, keeps only the event's datasets on, goes back to **Every month** if a single month was chosen, and moves the timeline to a month before the event, so you hear it arrive. "Playing now" appears on the card while the music is inside the event's dates.
 
 ### One Month Through the Years
 
@@ -155,7 +155,7 @@ In vinyl mode, `←` / `→` go to the previous or next groove, and `Home` / `En
 When the **timeline** is focused it also accepts `Shift` + `←` / `→` (one month back / forward; one year with a single month chosen in **Months**) and `Page Down` / `Page Up` (one year back / forward). When the volume slider is focused, the arrow keys change the volume. Shortcuts are ignored while you type in a field or while a dialog is open.
 
 !!! note
-    A `?` keyboard-help dialog exists in the code but is not currently displayed, so `?` has no effect.
+    There is no `?` keyboard-help dialog, so `?` has no effect. The **How to use** page lists the shortcuts.
 
 ---
 

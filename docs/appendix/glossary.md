@@ -23,7 +23,7 @@ The Web Audio API's central object for generating and processing audio. Must be 
 A reference period used for comparison. GISTEMP uses 1951-1980 as the baseline for temperature anomalies.
 
 ### BPM (Beats Per Minute)
-The tempo of music, measuring how many beats occur in one minute. Each music style has its own reference tempo (76 BPM for the orchestra and the realistic mode, 96 to 150 for the other genres). By default the tempo of each bar is that reference x0.8 to x1.25, following the global CO2 of the bar's month (see [Tempo](#tempo)).
+The tempo of music, measuring how many beats occur in one minute. Each music style has its own reference tempo (76 BPM for the orchestra, 96 to 150 for the other genres). By default the tempo of each bar is that reference x0.8 to x1.25 (in the realistic mode, a heartbeat of 60 to about 135 BPM), following the global CO2 of the bar's month (see [Tempo](#tempo)).
 
 ---
 

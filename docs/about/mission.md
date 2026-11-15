@@ -13,15 +13,9 @@ NASA's Earth Information Center produces stunning visualizations of climate data
 
 These visualizations are powerful tools for understanding climate change. But they rely entirely on **sight**.
 
-### 285 Million People Excluded
+### People Left Out
 
-According to the World Health Organization (2010 global estimate):
-
-- **285 million** people worldwide are visually impaired
-- **39 million** are blind
-- **246 million** have low vision
-
-For these individuals, traditional climate visualizations are inaccessible. Charts, maps, and animations cannot convey information to someone who cannot see them.
+For blind and visually impaired people, traditional climate visualizations are inaccessible. Charts, maps, and animations cannot convey information to someone who cannot see them.
 
 ---
 
@@ -112,28 +106,6 @@ The experience teaches about climate:
 - A How to use page explains each control, and an About page explains the mapping between data and sound
 - Info tooltips provide context
 - Key climate moments link historical events to the timeline
-
----
-
-## Impact
-
-### Who Benefits?
-
-1. **Visually impaired users**: Primary beneficiaries who can now access climate data
-2. **Educators**: New tool for teaching about climate change
-3. **Researchers**: Alternative data exploration method
-4. **General public**: Engaging way to understand climate trends
-
-### Broader Vision
-
-Earth Information Jukebox demonstrates that:
-
-- Data accessibility is achievable
-- Multiple senses can convey information
-- Climate communication can be innovative
-- Technology can bridge accessibility gaps
-
-We hope this project inspires others to consider accessibility in data presentation and scientific communication.
 
 ---
 

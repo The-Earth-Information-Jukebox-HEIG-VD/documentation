@@ -25,7 +25,7 @@ Earth Information Jukebox makes climate data **audible**. Its app, **EarthChestr
 Pick a zone on the globe (a continent, country, ocean or sea), choose which sounds to hear, and press Play. The backend composes the orchestra from NASA gridded data for that zone and streams it as 30-second MP3 chunks, while the globe draws the raw dataset values month by month. In vinyl mode, the globe becomes a record and the needle travels across places, through time, or both.
 
 !!! info "Why Sonification?"
-    An estimated 285 million people worldwide are visually impaired (WHO, 2010). Traditional climate visualizations - charts, maps, animations - are inaccessible to them. Sound provides an alternative pathway to understanding data.
+    Traditional climate visualizations - charts, maps, animations - are inaccessible to blind and visually impaired people. Sound provides an alternative pathway to understanding data.
 
 ---
 
@@ -104,7 +104,7 @@ Each climate variable is assigned an instrument (the live list comes from `GET /
 | [documentation](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/documentation) | This documentation |
 
 !!! note
-    At the time of writing, the code repositories are private and have no license file; only the documentation repository is public.
+    All repositories are public, but none has a license file yet: the code can be read, not reused.
 
 ---
 

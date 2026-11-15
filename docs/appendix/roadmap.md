@@ -55,18 +55,20 @@ Future plans and features for Earth Information Jukebox and its app, EarthChestr
 - [x] Vegetation (MODIS NDVI, clarinet), carbon monoxide (MOPITT, bassoon) and ocean plankton (MODIS Aqua chlorophyll, vibraphone) (API v2.14; datasets `v1.3.0`, sonification `v1.3.2`)
 - [x] Realistic mode: the heartbeat is the CO2 track's sound (API v2.15)
 
-### On `main`, not yet tagged
+### Completed (v1.4)
 
 - [x] How to use page (`#how-to-use`) in the webapp
-- [x] Animated logo (`SpinningLogo`): a gramophone tonearm swings onto the vinyl Earth, the record turns once, the arm swings back; still with reduced motion
+- [x] Animated logo (`SpinningLogo`): a gramophone tonearm swings onto the vinyl Earth, the record turns once, the arm swings back; still with reduced motion. Also on the loading screen and in the documentation site header
+- [x] Realistic mode: the temperature is heard as city traffic (API v2.16, sonification `v1.4.1`)
+
+### On `main`, not yet tagged
+
+- [x] 22 key events (9 added: Russian heatwave, US drought, Arctic sea ice 2012, Beast from the East, Europe drought, Antarctic sea ice 2023, NWT–Alberta wildfires, Amazon fires 2024, Arctic winter ice 2025; the 2009–10 and 2023–24 El Niño cards removed), each listing the datasets that show it
+- [x] Globe textures from NASA (Blue Marble Next Generation and ASTER elevation), served by the webapp instead of a CDN
 
 ---
 
 ## Short Term (Next Release)
-
-### In Progress
-
-- [ ] The animated logo on the loading screen and in the documentation site header
 
 ### Enhanced Data Sources
 
@@ -196,17 +198,6 @@ We welcome contributions in any of these areas:
 3. **Submit a PR** with your implementation
 
 See the [Contributing Guide](../development/contributing.md) for details.
-
----
-
-## Priorities
-
-We prioritize features based on:
-
-1. **Accessibility impact**: Does this help visually impaired users?
-2. **User demand**: Is this frequently requested?
-3. **Feasibility**: Can we implement this well?
-4. **Alignment**: Does this fit the project mission?
 
 ---
 

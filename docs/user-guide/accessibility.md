@@ -6,9 +6,9 @@
 
 ## Our Commitment
 
-This project exists to make climate data accessible to the **285 million visually impaired people** worldwide. Accessibility is not an afterthought - it's our core mission.
+This project exists to make climate data accessible to **blind and visually impaired people**. Accessibility is not an afterthought - it's our core mission.
 
-We target **WCAG 2.1 AA** and check the interface with automated tools (axe-core, jest-axe, ESLint `jsx-a11y`) and manual keyboard and screen-reader testing.
+We target **WCAG 2.1 AA** and check the interface with automated tools (axe-core, jest-axe, ESLint `jsx-a11y`).
 
 !!! note
     Some items below are still in progress. Features that are not yet available in the interface are marked as such.
@@ -58,13 +58,6 @@ There is no keyboard shortcuts dialog yet: `?` does nothing. The shortcuts are l
 
 ## Screen Reader Support
 
-### Tested With
-
-- **VoiceOver** (macOS)
-- **NVDA** (Windows)
-
-Other screen readers should work but are not regularly tested.
-
 ### What Screen Readers Announce
 
 - Skip link and page structure (landmarks)
@@ -75,7 +68,7 @@ Other screen readers should work but are not regularly tested.
 - The number of selected sounds on the **Sounds** button ("Sounds: 2 selected") and its expanded / collapsed state
 - Selected zone ("zone selected")
 - Loading, error and end-of-data messages
-- Data values while playing, for example "now playing: ... year" (see [Current Value Announcements](#current-value-announcements))
+- Data values while playing, for example "Now playing 1998: ..." (see [Current Value Announcements](#current-value-announcements))
 
 Announcements are translated (English, French, German) and the values are phrased to be read aloud, not just displayed.
 
@@ -122,7 +115,7 @@ The design targets WCAG AA ratios:
 - **Large text**: 3:1 minimum contrast ratio
 - **UI components**: 3:1 minimum contrast ratio
 
-A **high contrast** theme (black background, white text, 2px borders) and a **color-blind safe** palette with ▲ / ▼ warm / cool markers exist as CSS modes, but there is no settings menu to switch them on yet (see [Accessibility Settings](#settings-for-accessibility)). Contrast has not been formally audited for every screen.
+A **high contrast** theme (white on black in the dark theme, black on white in the light theme, 2px borders) and a **color-blind safe** palette with ▲ / ▼ warm / cool markers exist as CSS modes, but there is no settings menu to switch them on yet (see [Accessibility Settings](#settings-for-accessibility)). Contrast has not been formally audited for every screen.
 
 ### Not Relying on Color Alone
 
@@ -226,7 +219,7 @@ The **"What do you want to hear?"** panel is an inline section of the page, not 
 
 **Go to a date** is a non-modal popover (`role="dialog"` labelled by its "Go to a date" heading) opened from the date button (`aria-haspopup="dialog"`, `aria-expanded`). Focus moves to the Year select when it opens; it holds native Year and Month selects (months after the last data month are disabled) and **Close** / **Go** buttons. `Escape` or **Close** returns focus to the date button; tabbing out or clicking outside closes it. Playback shortcuts are ignored inside it.
 
-The shortcuts help dialog, once mounted, traps focus. While a modal is open, playback shortcuts are disabled.
+There is no modal dialog (and no shortcuts help dialog) in the app; the playback shortcuts are written to stay disabled while one is open.
 
 ### Error Messages
 
@@ -266,7 +259,7 @@ In Time mode the globe shows no moving trail, only one spot on the centre, whose
 
 ### Key Events
 
-The **Key events** cards under the globe are a list (`<li>` per card) with a level-3 heading per event. The dataset, the zone and the dates are text (a description list: "In our data" / "When it happened"); the dataset icon is decorative and the dataset name is written next to it. Each photo has alt text describing the scene. The **Play** button's accessible name includes the event and the months it plays (and the zone it selects, when no zone is selected), and the card playing now is marked with `aria-current` and a "Playing now" text.
+The **Key events** cards under the globe are a list (`<li>` per card) with a level-3 heading per event. The datasets (a list labelled "Datasets that show it"), the zone and the dates are text (a description list: "In our data" / "When it happened"); each dataset icon is decorative and the dataset name is written next to it. Each photo has alt text describing the scene. The **Play** button's accessible name includes the event and the months it plays (and the zone it selects, when no zone is selected), and the card playing now is marked with `aria-current` and a "Playing now" text.
 
 ### How to Use Page
 
@@ -287,23 +280,15 @@ While playing, the current value is announced through a persistent `aria-live="p
 
 ```html
 <div role="status" aria-live="polite" aria-atomic="true" class="sr-only">
-  Now playing: <value with units>, <year>
+  Now playing <year>: <value with units>
 </div>
 ```
 
-When several tracks are enabled, the value is prefixed by the main track's name. Anomalies are phrased in words ("above" / "below" the baseline) rather than symbols so they read well aloud.
+When several tracks are enabled, the value is prefixed by the main track's name (the first enabled track with a value). Units are written out in words ("degrees Celsius", "parts per million") so they read well aloud, and anomalies end with "vs normal" (for example "+1.2 degrees Celsius vs normal").
 
 ---
 
 ## Testing Accessibility
-
-### Manual Testing
-
-We regularly test with:
-
-1. **Keyboard only**: Navigate entire app without mouse
-2. **Screen readers**: VoiceOver, NVDA
-3. **Zoom** and **color contrast**: checked with browser tools
 
 ### Automated Testing
 
@@ -327,7 +312,6 @@ Found an accessibility barrier? Please help us fix it:
    - What you were trying to do
    - What assistive technology you use
    - What happened vs. what you expected
-3. We prioritize accessibility issues
 
 ---
 
@@ -338,7 +322,7 @@ Work in progress, not a certified conformance claim.
 ### Perceivable
 
 - [x] Text alternatives for icons, the globe canvas and the data graph (summary + table)
-- [ ] Transcript for the audio (component written, not yet mounted)
+- [ ] Transcript for the audio (not implemented yet)
 - [x] Content adaptable (semantic HTML, landmarks)
 - [ ] Distinguishable (AA contrast targeted, not fully audited)
 

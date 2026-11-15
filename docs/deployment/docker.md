@@ -14,17 +14,17 @@ Deploy EarthChestra (the Earth Information Jukebox project's app) using Docker C
 
 !!! info "Published images"
     `docker-compose.yml` pulls `ghcr.io/the-earth-information-jukebox-heig-vd/{datasets,sonification,webapp}`, each at its own version (`DATASETS_VERSION`, `SONIFICATION_VERSION`, `WEBAPP_VERSION`; default `latest`).
-    Images are published by the `v*` tag workflows (see [CI/CD](ci-cd.md#releasing-images)); the latest release is
-    `v1.4.0` in `webapp`, `sonification` and `datasets`, pulled as `1.4.0` (the version
+    Images are published by the `v*` tag workflows (see [CI/CD](ci-cd.md#releasing-images)); the latest releases are
+    `v1.4.0` in `webapp` and `datasets` and `v1.4.1` in `sonification`, pulled as `1.4.0` / `1.4.1` (the version
     variables take the Git tag **without** the `v`).
-    The repositories are private, so run `docker login ghcr.io` first. To run from the sibling checkouts instead,
+    The images are public, no `docker login` needed. To run from the sibling checkouts instead,
     use the **local build** below.
 
 ---
 
 ## Quick Start (local build)
 
-Build the images from the sibling repositories and mount the datasets checkout directly (no registry access needed). With the published images, `cp .env.example .env && docker login ghcr.io && docker compose up -d` is enough.
+Build the images from the sibling repositories and mount the datasets checkout directly (no registry access needed). With the published images, `cp .env.example .env && docker compose up -d` is enough.
 
 ```bash
 # All repositories side by side
@@ -42,8 +42,8 @@ cd deployment
 ./scripts/run-local.sh down       # stop
 ```
 
-`run-local.sh` checks that `../webapp`, `../sonification` and `../datasets/data` exist, copies `.env.example`
-to `.env` if needed (it must set `VITE_API_URL`, `/api` in the example), and runs:
+`run-local.sh` checks that `../webapp`, `../sonification` and `../datasets/data` exist and that `.env` exists and sets
+`VITE_API_URL` (`/api` in the example; create it first with `cp .env.example .env`), and runs:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build --wait
@@ -139,7 +139,7 @@ backend (FastAPI, python backend/serve.py)
 ```
 
 - **webapp image** (`webapp/Dockerfile`): `node:22-alpine` build stage (`npm ci && npm run build`, build arg
-  `VITE_API_URL`, default `/api`), served by `nginx:alpine` with `webapp/nginx.conf`.
+  `VITE_API_URL`, required, no default: use `/api`), served by `nginx:alpine` with `webapp/nginx.conf`.
 - **sonification image** (`sonification/Dockerfile`): `python:3.12-slim`, multi-stage. Includes `ffmpeg` (MP3),
   `tinysoundfont` and the GeneralUser GS SoundFont (downloaded at build time); VSCO samples only with
   `--build-arg WITH_VSCO=1`.
@@ -214,7 +214,7 @@ Set in `sonification/Dockerfile` (and partly by compose):
 
 | Build arg | Default | Description |
 |-----------|---------|-------------|
-| `VITE_API_URL` | `/api` | API base baked into the bundle at build time. Keep `/api` so nginx proxies to the backend |
+| `VITE_API_URL` | none (required, the build fails without it) | API base baked into the bundle at build time. Use `/api` so nginx proxies to the backend |
 
 ---
 
@@ -297,8 +297,8 @@ docker stats
 
 ### `docker compose up` fails pulling images
 
-`denied` from `ghcr.io`: the repositories are private, so run `docker login ghcr.io` with a token that has
-`read:packages`. `manifest unknown`: the version in `.env` was never published; use a released one (for example
+`denied` from `ghcr.io`: the images are public, so check the image name and that no stale `docker login` with an
+expired token is used (`docker logout ghcr.io`). `manifest unknown`: the version in `.env` was never published; use a released one (for example
 `1.4.0`, without `v`) or `./scripts/run-local.sh`.
 
 ### Container won't start

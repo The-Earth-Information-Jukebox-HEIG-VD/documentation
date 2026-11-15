@@ -13,15 +13,15 @@ The project is split into several repositories in the
 
 | Repository | Content | Visibility |
 |------------|---------|------------|
-| [webapp](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/webapp) | React frontend | private |
-| [sonification](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/sonification) | FastAPI backend + music engine | private |
-| [datasets](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/datasets) | Pre-processed monthly maps | private |
-| [data_processing](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/data_processing) | Dataset extraction scripts | private |
-| [deployment](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/deployment) | Docker Compose orchestration | private |
+| [webapp](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/webapp) | React frontend | public |
+| [sonification](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/sonification) | FastAPI backend + music engine | public |
+| [datasets](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/datasets) | Pre-processed monthly maps | public |
+| [data_processing](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/data_processing) | Dataset extraction scripts | public |
+| [deployment](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/deployment) | Docker Compose orchestration | public |
 | [documentation](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/documentation) | This site | public |
 
-Team members push to the organization's repositories directly. External contributors can fork the public
-`documentation` repository (and the others once they are made public) and open a pull request.
+Team members push to the organization's repositories directly. External contributors can fork any of the
+repositories and open a pull request.
 
 ### 2. Clone the Repository
 
@@ -43,8 +43,8 @@ Follow the [Development Setup Guide](../getting-started/development.md).
 git checkout -b feature/your-feature-name
 ```
 
-So far all work has been committed directly to `main`. For anything larger or risky, prefer a short-lived branch
-and a pull request.
+Small changes are committed directly to `main`; larger ones go through a short-lived branch and a pull request
+(squash-merged, with the PR number in the subject, e.g. `(#10)`).
 
 ---
 
@@ -52,7 +52,7 @@ and a pull request.
 
 ### Branch Naming
 
-Suggested prefixes (no branch exists yet on the remotes besides `main`):
+Suggested prefixes (the branches on the remotes so far use `feat/`, `fix/` and `docs/`, and some have no prefix):
 
 | Prefix | Purpose |
 |--------|---------|
@@ -70,8 +70,9 @@ Examples:
 
 ### Commit Messages
 
-The convention used in the code repositories: a short subject in the imperative, starting with a capital letter,
-saying what the change does (no type prefix), and an optional body explaining why.
+The convention used in the code repositories: a short subject in the imperative saying what the change does,
+and an optional body explaining why. Older commits start with a capital letter and have no type prefix; recent
+ones mostly use one (`feat:`, `fix:`, `docs:`, `ci:`).
 
 ```
 <Imperative summary of the change>
@@ -154,7 +155,7 @@ def pick_dataset(variables: list[str] | None = None, start: str | None = None) -
 }
 
 .button:focus-visible {
-  outline: 3px solid var(--color-primary);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -221,7 +222,8 @@ python -m pytest backend simulation -q
 ```
 
 !!! note
-    No coverage tooling is installed (`@vitest/coverage-v8`, `pytest-cov`), so there is no coverage target.
+    There is no coverage target. The webapp has `@vitest/coverage-v8` (`npx vitest run --coverage`); the backend
+    has no `pytest-cov`.
 
 ---
 
@@ -252,7 +254,7 @@ git push origin feature/your-feature-name
 
 Then create a Pull Request on GitHub.
 
-### 3. PR Template
+### 3. Suggested PR Description
 
 ```markdown
 ## Summary
@@ -277,10 +279,7 @@ Closes #123
 
 ### 4. Review Process
 
-1. Run the checks locally: there is no CI test workflow (see [CI/CD](../deployment/ci-cd.md))
-2. Team member reviews code
-3. Address feedback
-4. PR is merged when approved
+Run the checks locally before opening the PR: there is no CI test workflow (see [CI/CD](../deployment/ci-cd.md)).
 
 ---
 
@@ -382,14 +381,3 @@ Project maintainers will take appropriate action for any unacceptable behavior.
 - **Questions**: Open an issue with the `question` label (GitHub Discussions are not enabled)
 - **Bugs**: Open an issue with the `bug` label
 - **Features**: Open an issue with the `enhancement` label
-
----
-
-## Recognition
-
-Contributors are recognized in:
-- Repository contributors list
-- Release notes
-- Project documentation
-
-Thank you for contributing to making climate data accessible!

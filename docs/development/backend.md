@@ -21,7 +21,7 @@ uvicorn backend.app:app --reload --port 8000
 API docs at http://localhost:8000/docs
 
 !!! warning "Audio needs more than pip"
-    MP3 output needs `ffmpeg` on the PATH. Without `tinysoundfont` (or `ffmpeg`) `GET /api/health` reports `audio_rendering` / `mp3_encoding` as `false` and `POST /api/sonify` answers `503`. Optional orchestral samples: `python music/sampler.py --download` (~440 MB). The recordings of the realistic mode: `python music/soundscape.py --download` (`realistic_sounds` in `GET /api/health`).
+    MP3 output needs `ffmpeg` on the PATH. Without `tinysoundfont`, `GET /api/health` reports `audio_rendering: false` and `POST /api/sonify` answers `503`; without `ffmpeg`, `mp3_encoding` is `false` and the audio is returned as WAV. Optional orchestral samples: `python music/sampler.py --download` (~440 MB). The recordings of the realistic mode: `python music/soundscape.py --download` (`realistic_sounds` in `GET /api/health`).
 
 The server needs data to play. Either point `JUKEBOX_DATA_DIR` at converted datasets, or convert the team's raw folders from the `datasets` repository:
 
@@ -145,7 +145,7 @@ See the [API reference](../api/reference.md) for schemas.
 | GET | `/api/compositions/{id}` | no | Fetch an earlier composition |
 | GET | `/api/files/{id}/{file}` | no | Download a generated file |
 
-The deployed image serves only the first seven rows (`FRONTEND_PATHS` in `backend/app.py`). Use `-e JUKEBOX_FULL_API=1` to also serve the engine's endpoints. A backend run from source (`uvicorn backend.app:app`) serves everything by default. The API version (`API_VERSION`, reported by `GET /api/health`) is `2.14`.
+The deployed image serves only the first seven rows (`FRONTEND_PATHS` in `backend/app.py`). Use `-e JUKEBOX_FULL_API=1` to also serve the engine's endpoints. A backend run from source (`uvicorn backend.app:app`) serves everything by default. The API version (`API_VERSION`, reported by `GET /api/health`) is `2.16`.
 
 ---
 
@@ -260,7 +260,7 @@ payload["_v"] = API_VERSION
 key = hashlib.sha1(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()[:16]
 ```
 
-- The same request again is served from cache in milliseconds instead of 2 to 5 seconds
+- The same request again is served from the cache instead of being composed again
 - Concurrent identical requests wait on one lock instead of composing twice
 - The cache can be deleted without data loss (the converted datasets live in `<cache>/_datasets`: deleting those only forces a reconversion)
 
@@ -270,7 +270,7 @@ key = hashlib.sha1(json.dumps(payload, sort_keys=True, default=str).encode()).he
 
 ```bash
 cd sonification
-docker build -t earth-jukebox-sonification .        # ~1 GB; --build-arg WITH_VSCO=1 adds the orchestral samples (+440 MB)
+docker build -t earth-jukebox-sonification .        # --build-arg WITH_VSCO=1 adds the orchestral samples (+440 MB)
 docker run -p 8000:8000 \
   -v /path/to/datasets/data:/app/data:ro \
   -v jukebox-cache:/app/cache \

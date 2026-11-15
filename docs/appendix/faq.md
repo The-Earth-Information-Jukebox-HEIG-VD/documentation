@@ -108,7 +108,7 @@ No. All audio is composed by the sonification backend; there is no in-browser fa
 
 Yes! The app is designed with accessibility as a core feature:
 - Full keyboard navigation
-- Screen reader support (VoiceOver, NVDA, JAWS)
+- Built for screen readers (semantic HTML, labels and announcements)
 - ARIA labels and live regions (the value being played is announced, e.g. "+1.2 °C vs normal")
 - A list view as an alternative to the 3D globe
 
@@ -150,7 +150,7 @@ cp .env.example .env   # make sure VITE_API_URL=/api is set
 ```
 
 !!! note
-    The pre-built GHCR images are published (latest releases: `1.4.0` for webapp, sonification and datasets): with `docker login ghcr.io`, a plain `docker compose up -d` pulls them instead of building.
+    The pre-built GHCR images are public (latest releases: `1.4.0` for webapp and datasets, `1.4.1` for sonification): a plain `docker compose up -d` pulls them instead of building.
 
 See the [Quick Start](../getting-started/quickstart.md) guide.
 
@@ -250,7 +250,7 @@ See the [Team](../about/team.md) page.
 The code is hosted in the [The-Earth-Information-Jukebox-HEIG-VD](https://github.com/The-Earth-Information-Jukebox-HEIG-VD) GitHub organization.
 
 !!! note
-    At the time of writing, the code repositories are private and have no license file; only the documentation repository is public.
+    All repositories are public, but none has a license file yet: the code can be read, not reused.
 
 ---
 

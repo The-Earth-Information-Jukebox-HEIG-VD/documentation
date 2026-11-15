@@ -12,11 +12,11 @@ version tags, and the documentation is published on every push to `main`.
 
 | Repository | Workflow | Trigger | Does |
 |------------|----------|---------|------|
-| `webapp` | `.github/workflows/docker-publish.yml` | tag `v*`, push to branch `fb-docker-support` | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/webapp` |
-| `sonification` | `.github/workflows/docker-publish.yml` | tag `v*`, push to branch `fb-docker-support` | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/sonification` |
-| `datasets` | `.github/workflows/docker-publish.yml` | tag `v*` | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/datasets` |
+| `webapp` | `.github/workflows/docker-publish.yml` | tag `v*`, push to branch `fb-docker-support`, manual | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/webapp`, then the GitHub release |
+| `sonification` | `.github/workflows/docker-publish.yml` | tag `v*`, push to branch `fb-docker-support`, manual | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/sonification`, then the GitHub release |
+| `datasets` | `.github/workflows/docker-publish.yml` | tag `v*`, manual | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/datasets`, then the GitHub release |
 | `documentation` | `.github/workflows/deploy-pages.yml` | push to `main`, manual | Build MkDocs, deploy to GitHub Pages |
-| `deployment`, `data_processing` | none | | |
+| `documentation`, `deployment`, `data_processing` | `.github/workflows/release.yml` | tag `v*`, manual | GitHub release only (no image) |
 
 ```
 git tag v* ──▶ docker-publish.yml ──▶ ghcr.io/.../<repo>:<version>, :<major.minor>, :latest
@@ -28,10 +28,10 @@ push main (documentation) ──▶ deploy-pages.yml ──▶ GitHub Pages
 ```
 
 !!! info "Current state"
-    Releases are tagged: the latest is `v1.4.0` in `webapp`, `sonification` and `datasets` (earlier:
-    `v1.0.0`, `v1.1.0`, `v1.2.0`, `v1.3.0` in all three, plus `v1.0.1` in `webapp` and `v1.3.1` to `v1.3.3` in `sonification`).
-    `documentation`, `deployment` and `data_processing` are tagged from `v1.0.0`, so their
-    images are on GHCR. The `fb-docker-support` branches named in the
+    Releases are tagged: the latest is `v1.4.0` in `webapp` and `datasets` and `v1.4.1` in `sonification` (earlier:
+    `v1.0.0`, `v1.1.0`, `v1.2.0`, `v1.3.0`, `v1.4.0` in all three, plus `v1.0.1` in `webapp` and `v0.1.0`, `v0.2.0`,
+    `v1.3.1` to `v1.3.3` in `sonification`). `documentation`, `deployment` and `data_processing` are tagged `v1.0.0`;
+    they publish no image, only a GitHub release. The `fb-docker-support` branches named in the
     webapp and sonification triggers no longer exist, so in practice only tags publish.
 
 ---
@@ -49,6 +49,7 @@ on:
       - 'v*'
     branches:
       - 'fb-docker-support'   # webapp and sonification only, for testing the workflow
+  workflow_dispatch:          # manual run: only (re)creates the GitHub release of an existing tag
 
 env:
   REGISTRY: ghcr.io
@@ -127,7 +128,7 @@ run only makes the release and does not rebuild the image.
 
 !!! note
     The `datasets` image contains all of `datasets/data` (~9.1 GB at the moment); expect a long build and push.
-    Packages created from private repositories are private: deployment hosts need `docker login ghcr.io`.
+    The published packages are public: deployment hosts can pull them without `docker login`.
 
 Watch the runs:
 

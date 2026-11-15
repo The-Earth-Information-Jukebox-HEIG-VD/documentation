@@ -2,7 +2,7 @@
 
 ## HEIG-VD Team
 
-We are a team of students and developers from [HEIG-VD](https://heig-vd.ch/) (Haute Ecole d'Ingénierie et de Gestion du Canton de Vaud), participating in the NASA Space Apps Challenge 2026.
+We are a team of R&D collaborators at [HEIG-VD](https://heig-vd.ch/) (Haute Ecole d'Ingénierie et de Gestion du Canton de Vaud), participating in the NASA Space Apps Challenge 2026.
 
 ---
 
@@ -11,8 +11,8 @@ We are a team of students and developers from [HEIG-VD](https://heig-vd.ch/) (Ha
 | Name | Role |
 |------|------|
 | **Egger Magali** | Data Processing |
-| **Ferrari Téo** | Sonification |
-| **Fleurimont Clarisse Estelle** | Frontend, DevOps & Deployment |
+| **Ferrari Téo** | Sonification, globe data spots |
+| **Fleurimont Clarisse Estelle** | Frontend, backend API, DevOps, Deployment & Documentation |
 | **Izadmehr Yasaman** | Data Processing |
 | **Walther Simon** | Data Processing |
 | **Zmoos Léo** | Sonification |
@@ -27,23 +27,7 @@ HEIG-VD is one of Switzerland's leading universities of applied sciences, locate
 
 ## Collaboration
 
-### Working Together
-
-Our team brings together diverse skills:
-
-- **Software Development**: React, Python, TypeScript
-- **Audio Engineering**: Web Audio API, MIDI, sound design
-- **Data Science**: NASA data processing, normalization
-- **UX/UI Design**: Accessibility, user experience
-- **DevOps**: Docker, CI/CD, deployment
-
-### Communication
-
-We use:
-
-- **GitHub** for code collaboration and issue tracking
-- **Discord** for real-time communication
-- **Notion** for documentation and planning
+We use **GitHub** for code collaboration and issue tracking.
 
 ---
 

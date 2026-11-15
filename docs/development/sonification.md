@@ -146,7 +146,7 @@ Aliases are accepted (`jazz`, `rock`, `disco`, `electro`, `pop`, `classical`). I
 | Snow | Soft, high wind |
 | Fires | Campfire, plus a fireplace and a low roar for big fires |
 | Lightning | Real thunderclaps, as many as the flashes |
-| Temperature | A low heat drone that trembles faster and clashes when warmer (with `tempo_source: "temperature"`: a heartbeat) |
+| Temperature | City traffic (recording), louder when warmer (v2.16; with `tempo_source: "temperature"`: a heartbeat) |
 | CO2 | A heartbeat at the CO2's tempo, irregular above 400 ppm; it beats only when CO2 is selected, even in years without CO2 maps (v2.15; city traffic with `tempo_source: "temperature"`) |
 | Night lights | 50 Hz hum of street lamps (synthesised) |
 | Sea ice | "Singing" ice: pings of cracks and creaks of floes (synthesised) |
@@ -248,7 +248,7 @@ python music/sampler.py --download  # ~440MB one-time
 
 In Docker the SoundFont is always baked in; the samples are included with `--build-arg WITH_VSCO=1`.
 
-The rendered MP3 is about 1.7 s longer than `duration_s` because the reverb rings out after the last note; the webapp overlaps that tail with the next chunk.
+The rendered MP3 is longer than `duration_s` because the reverb rings out after the last note; the webapp overlaps that tail with the next chunk.
 
 ---
 

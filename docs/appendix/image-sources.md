@@ -8,7 +8,7 @@ Every image shown in the EarthChestra webapp, how the app uses it, and where it 
 
 **How they are used:** each card in the **Key events** section starts with a photo of the event. The photo has alt text in English, French and German. At the bottom of the card, a credit line names the source, written as *Photo: Author · licence*. The line links to the image page on Wikimedia Commons and opens in a new tab.
 
-**Where they come from:** all photos are free images from [Wikimedia Commons](https://commons.wikimedia.org/). The originals are kept in `webapp/res/img/Selected_Ones/`, and the licence of each one was checked on its Commons page (see `CREDITS_selected.md` in the same folder). The app ships resized copies (1200 px wide) in `webapp/src/assets/events/`. The Yakutia wildfires and Hunga Tonga files are animated GIFs, and the app shows one still frame of each. This keeps the page light and avoids looping animation, which WCAG 2.2.2 (Pause, Stop, Hide) asks for.
+**Where they come from:** all photos are free images from [Wikimedia Commons](https://commons.wikimedia.org/). The originals are kept in `webapp/res/img/Selected_Ones/`, and the licence of each one was checked on its Commons page (see `CREDITS_selected.md` in the same folder). The app ships resized copies (at most 1200 px wide) in `webapp/src/assets/events/`. The Yakutia wildfires and Hunga Tonga files are animated GIFs, and the app shows one still frame of each. This keeps the page light and avoids looping animation, which WCAG 2.2.2 (Pause, Stop, Hide) asks for.
 
 | Event | What the image shows | Source · licence | File in the app |
 |---|---|---|---|

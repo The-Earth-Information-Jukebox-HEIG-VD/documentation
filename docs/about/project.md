@@ -64,7 +64,7 @@ There is no generative AI in the music. Fixed rules turn the data into notes, so
 - Select continents, countries, oceans and seas on a 3D globe or in a list
 - Enable or disable instrument tracks
 - Seek through time, jump to a date, or hear one month year after year
-- Play one of 15 key climate moments (El Niño, wildfires, floods, storms, the Hunga Tonga eruption)
+- Play one of 22 key climate events (El Niño, droughts, wildfires, floods, storms, sea ice record lows, the Hunga Tonga eruption)
 - Follow a chart of the zone's values, one line per dataset
 - Vinyl mode: the globe becomes a record; the needle travels across places, through time, or both
 - Watch the raw data of the selected zone drawn on the globe during playback
@@ -88,5 +88,5 @@ There is no generative AI in the music. Fixed rules turn the data into notes, so
 All code is hosted on GitHub under the [The-Earth-Information-Jukebox-HEIG-VD](https://github.com/The-Earth-Information-Jukebox-HEIG-VD) organization.
 
 !!! note
-    At the time of writing, the code repositories are private and have no license file; only the documentation repository is public.
+    All repositories are public, but none has a license file yet: the code can be read, not reused.
 

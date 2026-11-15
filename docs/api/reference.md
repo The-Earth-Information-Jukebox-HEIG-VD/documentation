@@ -1,6 +1,6 @@
 # API Reference
 
-Complete REST API documentation for the Earth Information Jukebox backend (FastAPI, API version 2.15). The webapp built on it is **EarthChestra**, the Earth Information Jukebox project's app.
+Complete REST API documentation for the Earth Information Jukebox backend (FastAPI, API version 2.16). The webapp built on it is **EarthChestra**, the Earth Information Jukebox project's app.
 
 ---
 
@@ -28,6 +28,12 @@ CORS is open by default (`JUKEBOX_CORS=*`, comma-separated list of origins). Eve
 | POST | `/api/zones/zone-data` | yes | Same as `/api/sonify` with the webapp's field names; **the call the webapp uses** |
 | POST | `/api/zones/series` | yes | The whole monthly series of the selected area, no audio (the webapp's data graph) |
 | POST | `/api/zones/groove` | yes | Vinyl mode (v2.6): a path in space at one fixed date in, its music (MP3, base64) out |
+| GET | `/api/options` | no | UI menu options |
+| GET | `/api/datasets` | no | Available datasets |
+| POST | `/api/sonify/debug` | no | `/api/sonify` with engine options and a detailed answer |
+| POST | `/api/compose` | no | Full composition with every option and the score |
+| GET | `/api/compositions/{id}` | no | Fetch an earlier composition |
+| GET | `/api/files/{id}/{file}` | no | Download a generated file |
 
 ### Version history
 
@@ -45,14 +51,9 @@ CORS is open by default (`JUKEBOX_CORS=*`, comma-separated list of origins). Eve
 | 2.13 | The global CO2 sets the tempo by default (`tempo_source`); a 30 s chunk is about 8 to 13 months |
 | 2.14 | Vegetation (`vegetation`), carbon monoxide (`carbon_monoxide`), ocean plankton (`chlorophyll`) |
 | 2.15 | `realistic`: the heartbeat is the sound of the CO2 track (only when `co2` is selected), in place of city traffic |
+| 2.16 | `co2` completed with the world CO2 record (Law Dome ice cores, Mauna Loa) from 1875-01 to the previous month; `measured` / `filled_with` in the series |
 
 The full changelog is in `sonification/backend/API.md`.
-| GET | `/api/options` | no | UI menu options |
-| GET | `/api/datasets` | no | Available datasets |
-| POST | `/api/sonify/debug` | no | `/api/sonify` with engine options and a detailed answer |
-| POST | `/api/compose` | no | Full composition with every option and the score |
-| GET | `/api/compositions/{id}` | no | Fetch an earlier composition |
-| GET | `/api/files/{id}/{file}` | no | Download a generated file |
 
 ---
 
@@ -65,7 +66,7 @@ Check server status and capabilities.
 ```json
 {
   "status": "ok",
-  "version": "2.15",
+  "version": "2.16",
   "datasets": 11,
   "data_dir": "/app/data",
   "built_dir": "/app/cache/_datasets",
@@ -141,7 +142,7 @@ Which instrument plays which dataset. One entry per dataset the server has data 
 | `dataset_id` | Instrument | Units | Data |
 |---|---|---|---|
 | `temperature` | Piano (chords) | °C anomaly | 1880-01 to 2025-12 |
-| `co2` | Contrabass | ppm | 2002-09 to 2022-03 |
+| `co2` | Contrabass | ppm | 1875-01 to the previous month: the CO2 maps (2002-09 to 2022-03), completed with the world CO2 record (v2.16) |
 | `precipitation` | Violins (melody) | mm/day of rain | 2000-06 to 2026-11 |
 | `snow` | Glockenspiel (melody) | mm/day of melted water | 2000-06 to 2026-11 |
 | `fires` | Trombones | days of the month with a fire | 2002-07 to 2026-11 |
@@ -364,6 +365,7 @@ The whole monthly series of the selected area, for a chart (API v2.4; `mask` sin
 - `start` is **per dataset**: the first month of that dataset's own data, the same as its `first_time_period` in `/api/instruments`.
 - `units` is the same text as in `/api/instruments`; `anomaly: true` = degrees away from a normal.
 - `yearly: true` (`night_lights`): one map per year, so the 12 months of a year have the same value. Draw it as steps.
+- `co2` (v2.16): the CO2 maps only cover 2002-09 to 2022-03 and have blank areas, so the series is completed with the world CO2 record (Law Dome ice cores, Mauna Loa) from 1875-01 to the previous month, and has no `null`. Two extra fields say which part is measured: `"measured": {"first": "2002-09", "last": "2022-03"}` (`null` when the area has no measured month) and `"filled_with": "world CO2 record (Law Dome ice cores, Mauna Loa)"`. In `/api/instruments`, `co2` then also has `measured_first_time_period` / `measured_last_time_period`.
 - Daily data is averaged per month.
 - `missing`: the requested ids the server has no data for. They are left out of `series`, not an error, as long as one id is known.
 - **Errors**: `400` when none of the ids is known; `422` malformed request (no points and no mask, more than 20 000 points, an invalid `mask`, no `dataset_ids`, another `aggregation`).
@@ -692,7 +694,7 @@ The response has the seven `/api/sonify` fields plus: `zone_name`, `audio_format
 - Every note has `time_s` and `duration_s` in **real seconds**; use them rather than `start * 60 / bpm`.
 - `score.time_last_frame` is the date of the last frame played; `score.time_end` is the start of the last bar.
 - `request.datasets` is `{variable: dataset}` when several datasets were merged.
-- The rendered audio is about 1.7 s longer than `duration_s` (the hall reverb rings out).
+- The rendered audio is longer than `duration_s` (the hall reverb rings out).
 - `score.genre` names the genre; `score.tempo_map` has one entry per tempo change, `score.tempo_range` the slowest and fastest, `score.tempo_source` (`co2`, `temperature` or null) what set them, and `score.co2` gives `co2_ppm_per_bar` and `urgency_per_bar` (0..1). With `eras`, `score.eras` lists the eras and `bars[i].era` names each bar's.
 
 **Timing:** first request about 2 to 3 s with MP3 (5 to 10 s with orchestral samples), about 0.5 s without audio. The same request again is served from cache in about 10 ms.

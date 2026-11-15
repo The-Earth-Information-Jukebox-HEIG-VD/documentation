@@ -15,7 +15,7 @@ Guide for testing Earth Information Jukebox.
 | Runtime a11y checks | axe-core (dev only) | browser console | Violations while developing |
 
 !!! note "Not set up yet"
-    There are no end-to-end tests (Playwright is not installed), no coverage tooling or thresholds, and no CI workflow that runs the tests. The only GitHub Actions workflow in `webapp` builds and publishes the Docker image.
+    There are no end-to-end tests (Playwright is not installed), no coverage thresholds (`@vitest/coverage-v8` is installed: `npx vitest run --coverage`), and no CI workflow that runs the tests. The only GitHub Actions workflow in `webapp` builds and publishes the Docker image.
 
 ---
 
@@ -27,7 +27,7 @@ Guide for testing Earth Information Jukebox.
 cd webapp
 npm install
 npm run test            # Vitest in watch mode
-npx vitest run          # single run (currently 50 test files)
+npx vitest run          # single run (currently 51 test files)
 npx vitest run src/audio/ChunkPlayer.test.ts   # one file
 ```
 
@@ -56,7 +56,7 @@ The backend is never called in tests: `ChunkPlayer` takes an injectable `fetchCh
 | `hooks/usePlaybackPosition.test.ts`, `useLocalStorageBoolean.test.ts`, `useLocalStorageString.test.ts`, `useCompactOnScroll.test.ts` | Position store, persisted preferences, compact header |
 | `hooks/useMusicStyle.test.ts`, `components/controls/StyleSelector.test.tsx`, `utils/instrumentName.test.ts` | Music style menu (`GET /api/genres`), recommended / fun groups, instrument names per genre |
 | `hooks/useSonification.jumpTo.test.ts`, `services/monthTravel.test.ts`, `components/player/MonthTravelControl.test.tsx` | Jumping to a key event, one month year after year (`step: "year"`) |
-| `data/keyMoments.test.ts`, `components/moments/KeyMomentsSection.test.tsx` | The 15 key events and their cards |
+| `data/keyMoments.test.ts`, `components/moments/KeyMomentsSection.test.tsx` | The 22 key events and their cards |
 | `hooks/trackColors.test.ts`, `data/trackColors.test.ts` | Track colours |
 | `utils/npy.test.ts`, `zoneCells.test.ts`, `zoneMask.test.ts`, `reading.test.ts`, `zoneName.test.ts`, `geometry.test.ts`, `motion.test.ts` | `.npy` parsing, zone grid cells, compact `mask`, value formatting, zone names, geometry, reduced motion |
 | `components/player/AudioPlayerEnhanced.test.tsx` | Blocked Play, live regions, axe |
@@ -116,8 +116,8 @@ Import `'../../i18n'` in component tests so translated labels resolve.
 Two scripts filter by **test name** (`--testNamePattern`), not by folder:
 
 ```bash
-npm run test:audio   # tests whose name contains "audio" (currently 4 tests)
-npm run test:a11y    # tests whose name contains "accessibility" (currently 27 tests)
+npm run test:audio   # tests whose name contains "audio" (currently 7 tests)
+npm run test:a11y    # tests whose name contains "accessibility" (currently 60 tests)
 ```
 
 So `test:a11y` only runs tests inside a `describe` (or `it`) whose name contains the word `accessibility`, for example `describe('AudioPlayerEnhanced accessibility', ...)`. **Keep that word in the name of new accessibility tests**, otherwise they are skipped by this script. The match is case-sensitive.

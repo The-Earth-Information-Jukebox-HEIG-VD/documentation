@@ -36,7 +36,7 @@ Total about 3:55 spoken at a calm pace; cut the optional lines (marked *optional
 
 > "That was not a film score. That was the temperature of a continent, month after month, played by a piano. The higher the note, the warmer it was."
 >
-> "285 million people worldwide live with visual impairment. For them, most of the climate data we see every day is invisible."
+> "For blind and visually impaired people, most of the climate data we see every day is invisible."
 
 *Fallback if audio fails:* say the hook lines, then go straight to the demo and start playing as early as possible.
 
@@ -72,7 +72,7 @@ Total about 3:55 spoken at a calm pace; cut the optional lines (marked *optional
 **Say:**
 > "Eleven datasets, eleven instruments: temperature is piano chords, CO2 a contrabass, rain violins, snow a glockenspiel, lightning timpani, fires trombones, night lights a synth pad, sea ice bowed glass, vegetation a clarinet, carbon monoxide a bassoon and ocean plankton a vibraphone."
 >
-> "Everything except temperature and CO2 only plays when it is there." Heavy rain makes the violins repeat faster, more lightning means more timpani strokes, and the trombones swell with the fires."
+> "Everything except temperature and CO2 only plays when it is there. Heavy rain makes the violins repeat faster, more lightning means more timpani strokes, and the trombones swell with the fires."
 
 ### Step 3 - Play (1:40, 35 s)
 
@@ -92,7 +92,7 @@ Total about 3:55 spoken at a calm pace; cut the optional lines (marked *optional
 **Do:** Drag the timeline (or press the arrow keys, Home or End) to jump. Click **"Go to a date"**, pick a year and month, press Go. Optional: press Play on one of the **Key events** cards under the globe (for example Black Summer 2019, or the 2015 super El Niño): it selects the zone and the dataset and starts just before the event.
 
 **Say:**
-> "Temperature goes back to 1880. Use the timeline, or go straight to any month. Jump to the 1950s, then to last year: you hear the piano climb."
+> "The timeline goes back to 1920. Use it, or go straight to any month. Jump to the 1950s, then to last year: you hear the piano climb."
 
 ### Step 5 - See the data too (2:35, 10 s)
 
@@ -147,7 +147,7 @@ Total about 3:55 spoken at a calm pace; cut the optional lines (marked *optional
 Answers use only what the app does today. If you are unsure of a number, say so and point to the About page ("Data sources", "Under the hood").
 
 ### What NASA data do you use, and for what period?
-> "Eleven datasets, mostly NASA: GISTEMP temperature anomaly, monthly, 1880 to 2025, against the 1951-1980 baseline. GPM IMERG for rain and snow, June 2000 onwards. MODIS fires, July 2002 onwards (days of the month with a fire). ISS LIS lightning, March 2017 to July 2023. NASA SVS Earth at Night lights, one map per year, 2012 to 2023. CO2 monthly, September 2002 to March 2022, extracted by our team. NSIDC Sea Ice Index, 1979 onwards. MODIS Terra vegetation index from 2000 and MODIS Aqua ocean chlorophyll from 2002. MOPITT carbon monoxide on NASA Terra, 2000 to 2024. Zone outlines are from Natural Earth."
+> "Eleven datasets, mostly NASA: GISTEMP temperature anomaly, monthly, 1880 to 2025 (the app's timeline starts in 1920), against the 1951-1980 baseline. GPM IMERG for rain and snow, June 2000 onwards. MODIS fires, July 2002 onwards (days of the month with a fire). ISS LIS lightning, March 2017 to July 2023. NASA SVS Earth at Night lights, one map per year, 2012 to 2023. CO2 monthly, September 2002 to March 2022, extracted by our team, completed with the world CO2 record (Law Dome ice cores, Mauna Loa) from 1875 to last month. NSIDC Sea Ice Index, 1979 onwards. MODIS Terra vegetation index from 2000 and MODIS Aqua ocean chlorophyll from 2002. MOPITT carbon monoxide on NASA Terra, 2000 to 2024. Zone outlines are from Natural Earth."
 
 ### Where does the audio come from? Do you synthesize it in the browser?
 > "No. The backend composes it: it averages each dataset over the selected points, writes a MIDI score and renders it to a 30-second MP3, base64 encoded. The browser decodes and schedules the pieces with the Web Audio API. The frontend only plays; it never makes up a note."
@@ -162,7 +162,7 @@ Answers use only what the app does today. If you are unsure of a number, say so 
 > "We have not run a user study. The literature on sonification reports that listeners can follow trends by ear; our claim is narrower: it gives non-visual access that did not exist for these dashboards. The graph and tables give the exact numbers."
 
 ### Is it really accessible to blind users?
-> "It is designed for it and we test with keyboard and screen reader, but we have not yet had blind users evaluate it, and we say so. What exists: keyboard shortcuts, live announcements of the zone and the current value, a List View alternative to the globe, data tables for the globe and the graph, visible focus, reduced-motion support, high-contrast and colour-blind-safe options."
+> "It is designed for it, but it has not yet been evaluated by blind users, and we say so. What exists: keyboard shortcuts, live announcements of the zone and the current value, a List View alternative to the globe, data tables for the globe and the graph, visible focus, reduced-motion support, high-contrast and colour-blind-safe options."
 
 ### Why did you choose an orchestra?
 > "One instrument per dataset lets you hear several variables at once and tell them apart, and music is engaging, which encourages exploration. Temperature is the piano because it is the harmonic foundation, CO2 the contrabass because it is the quiet, low presence under everything."
@@ -177,10 +177,10 @@ Answers use only what the app does today. If you are unsure of a number, say so 
 > "All datasets are put on one 0.25 degree grid so a place has the same position in every dataset; the server then averages on 1 degree maps (2 degrees for temperature). Fine for continents, countries and seas; it is not meant for city-scale analysis."
 
 ### What are the limits today?
-> "Datasets end at different dates (lightning 2023, CO2 2022, carbon monoxide 2024), so some instruments fall silent; two engine voices, dust and smoke, exist but no data is served for them yet; and it needs the server."
+> "Datasets end at different dates (lightning 2023, carbon monoxide 2024; the CO2 maps end in 2022 and the world CO2 record fills in after), so some instruments fall silent; two engine voices, dust and smoke, exist but no data is served for them yet; and it needs the server."
 
 ### How did your team work?
-> "Six students from HEIG-VD in Switzerland: Magali Egger, Yasaman Izadmehr and Simon Walther on data processing, Teo Ferrari and Leo Zmoos on sonification, and Clarisse Estelle Fleurimont on frontend, DevOps and deployment. We used GitHub, Discord and Notion, and Claude agents to assist on specialised tasks."
+> "Six R&D collaborators at HEIG-VD in Switzerland: Magali Egger, Yasaman Izadmehr and Simon Walther on data processing, Teo Ferrari and Leo Zmoos on sonification (Teo also drew the data spots on the globe), and Clarisse Estelle Fleurimont on frontend, DevOps and deployment, backend API work and the documentation. We worked together on GitHub and used Claude agents to assist on specialised tasks."
 
 ### Open source and reuse?
 > "The project is on GitHub (The-Earth-Information-Jukebox-HEIG-VD). Adding a dataset means adding its data and an instrument entry in the orchestra table; the app discovers tracks from the server."

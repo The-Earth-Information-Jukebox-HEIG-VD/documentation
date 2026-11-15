@@ -4,8 +4,8 @@ Get EarthChestra, the Earth Information Jukebox project's app, running locally.
 
 !!! info "Repositories"
     The code lives in the [The-Earth-Information-Jukebox-HEIG-VD](https://github.com/The-Earth-Information-Jukebox-HEIG-VD)
-    organization. Apart from `documentation`, the repositories are **private**: you need to be a member and
-    clone over SSH (or HTTPS with a token). All of them must sit side by side in one folder.
+    organization. All the repositories are public (clone over SSH or HTTPS). All of them must sit side by
+    side in one folder.
 
 ---
 
@@ -20,6 +20,7 @@ git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/sonification.git
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/datasets.git    # ~9.1 GB of data
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/deployment.git
 cd deployment
+cp .env.example .env   # run-local.sh needs it (VITE_API_URL=/api, ports)
 
 # Build + start (waits until healthy)
 ./scripts/run-local.sh
@@ -40,8 +41,8 @@ Stop it with `./scripts/run-local.sh down`.
     The first start converts the datasets in the background (a few minutes). Music is available once
     `GET /api/health` reports `"preparing_data": false`.
 
-    A plain `docker compose up -d` pulls the pre-built images from GHCR instead (published, latest release `1.4.0` for webapp, sonification and datasets for sonification;
-    run `docker login ghcr.io` first, the packages are private); see [Docker Deployment](../deployment/docker.md).
+    A plain `docker compose up -d` pulls the pre-built images from GHCR instead (latest releases: `1.4.0` for webapp and datasets, `1.4.1` for sonification;
+    the images are public, no login needed); see [Docker Deployment](../deployment/docker.md).
 
 ---
 
@@ -110,7 +111,7 @@ Example response (abridged):
 ```json
 {
   "status": "ok",
-  "version": "2.15",
+  "version": "2.16",
   "datasets": 11,
   "preparing_data": false,
   "merge_datasets": true,

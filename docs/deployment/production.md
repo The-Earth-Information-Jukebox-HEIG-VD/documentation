@@ -4,8 +4,8 @@ Deploy EarthChestra (the Earth Information Jukebox project's app) to a server (V
 
 !!! info "Published images"
     The production setup (`docker-compose.yml` + `docker-compose.prod.yml`) pulls images from GHCR. Releases are
-    published: the latest tag is `v1.4.0` in `webapp`, `sonification` and `datasets`, so the images
-    exist as `1.4.0` (Git tag without the `v`). To publish a new version see [Releasing images](ci-cd.md#releasing-images); to build
+    published: the latest tag is `v1.4.0` in `webapp` and `datasets` and `v1.4.1` in `sonification`, so the
+    images exist as `1.4.0` / `1.4.1` (Git tag without the `v`). To publish a new version see [Releasing images](ci-cd.md#releasing-images); to build
     on the server from the sibling repositories instead, use `docker-compose.local.yml`
     (see [Docker](docker.md#quick-start-local-build)).
 
@@ -20,12 +20,11 @@ Deploy EarthChestra (the Earth Information Jukebox project's app) to a server (V
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER      # log out and back in
 
-# Clone the deployment repository (private: use an SSH key or token with access to the organization)
-git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/deployment.git
+# Clone the deployment repository (public)
+git clone https://github.com/The-Earth-Information-Jukebox-HEIG-VD/deployment.git
 cd deployment
 
-# The repositories are private, so their GHCR images are private by default
-docker login ghcr.io               # GitHub username + a token with read:packages
+# The GHCR images are public: no docker login needed
 ```
 
 ### 2. Configure Environment
@@ -38,7 +37,7 @@ Then edit `.env`:
 
 ```bash
 WEBAPP_VERSION=1.4.0                   # pin each release instead of latest (no "v")
-SONIFICATION_VERSION=1.4.0
+SONIFICATION_VERSION=1.4.1
 DATASETS_VERSION=1.4.0
 DOMAIN=example.com                     # webapp on DOMAIN, API on api.DOMAIN
 ACME_EMAIL=admin@example.com           # Let's Encrypt account
@@ -112,14 +111,6 @@ The datasets image is a single ~9.1 GB layer: pulling it needs about twice that,
 `docker-compose.hostdata.yml`: the data is stored once as plain files and mounted read-only into the backend and the
 webapp (~14 GB in total).
 
-| Measured at 1 CPU / 1.5 GB RAM, on an earlier version | Result |
-|---|---|
-| First-start data preparation (6 datasets, measured before fires was added) | 53 s, peak 911 MiB |
-| Backend memory afterwards | ~350 MiB |
-| One 30 s chunk, six instruments (there are now eleven) | ~1.7 s (expect 2-4 s on a cloud vCPU) |
-
-With eleven datasets the first-start preparation and a chunk with every track on take longer; these figures have not been measured again.
-
 ```bash
 # Optional on 2 GB RAM: 2 GB swap as a safety margin
 sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
@@ -137,7 +128,7 @@ mv datasets/data ~/jukebox-data && rm -rf datasets
 COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml:docker-compose.hostdata.yml
 JUKEBOX_DATA_PATH=/home/ubuntu/jukebox-data   # absolute path
 WEBAPP_VERSION=1.4.0
-SONIFICATION_VERSION=1.4.0
+SONIFICATION_VERSION=1.4.1
 DOMAIN=example.com
 ACME_EMAIL=admin@example.com
 ```
@@ -203,8 +194,8 @@ volume mounts; there is no need to set them. The other backend variables are lis
 
 ### Frontend
 
-`VITE_API_URL` is a **build-time** argument of the webapp image (default `/api`), not a runtime variable. Keep the
-default so the browser goes through the nginx proxy.
+`VITE_API_URL` is a **build-time** argument of the webapp image (required, no default; the CI builds the published
+images with `/api`), not a runtime variable. Use `/api` so the browser goes through the nginx proxy.
 
 ---
 
@@ -221,7 +212,7 @@ Example response:
 ```json
 {
   "status": "ok",
-  "version": "2.15",
+  "version": "2.16",
   "datasets": 11,
   "data_dir": "/app/data",
   "built_dir": "/app/cache/_datasets",
@@ -289,8 +280,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml ps data-init   #
 
 ### Image Pull Denied
 
-Run `docker login ghcr.io` with a token that can read the organization's packages, and check that the tag in `.env`
-was actually published.
+The images are public, so no login is needed: check that the tag in `.env` was actually published, and run
+`docker logout ghcr.io` if an expired token is stored.
 
 ### Port Already in Use
 

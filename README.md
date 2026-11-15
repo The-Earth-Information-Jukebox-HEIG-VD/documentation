@@ -10,7 +10,7 @@
     ╚═══════════════════════════════════════════════════════════════╝
 ```
 
-**NASA Space Apps Challenge 2026** - Transforming NASA Earth Information Center climate visualizations into orchestral audio (sonification), making climate data accessible to 285 million visually impaired people worldwide.
+**NASA Space Apps Challenge 2026** - Transforming NASA Earth Information Center climate visualizations into orchestral audio (sonification), making climate data accessible to blind and visually impaired people.
 
 > *"Hear the Earth's story through music"*
 

@@ -59,7 +59,7 @@ webapp/src/
 ├── data/
 │   ├── datasetRegistry.ts      # The 11 globe layers: files, display ranges, units, track ids
 │   ├── trackColors.ts          # One colour per dataset, dark and light palettes (track dot, graph line, globe spots)
-│   ├── keyMoments.ts           # The 15 key events (El Niño, wildfires, floods, storms, Hunga Tonga)
+│   ├── keyMoments.ts           # The 22 key events (El Niño, wildfires, floods, storms, Hunga Tonga)
 │   ├── vinylPresets.ts         # The 11 ready-made record centres (vinyl mode)
 │   └── zones/                  # Continents, countries, water bodies (GeoJSON)
 ├── components/
@@ -122,7 +122,7 @@ Areas are separated by surface tone and spacing, not borders. Borders remain onl
 
 ### sonificationApi.ts
 
-Typed client for the backend (types are the exact shapes of `sonification/backend/FRONTEND_API.md`; the file header cites v2.10, the backend is at v2.15, whose later additions are new datasets, the CO2 tempo and the realistic heartbeat, with no change to the request shapes). The selected points are sent as a compact `mask` (`utils/zoneMask.ts`: 0.1° bit grid, deflate via `CompressionStream`, base64; a few kB instead of up to 14 MB) whenever the browser can build one, otherwise as `points`:
+Typed client for the backend (types are the exact shapes of `sonification/backend/FRONTEND_API.md`; the file header cites v2.10, the backend is at v2.16, whose later additions are new datasets, the CO2 tempo, the realistic heartbeat and the CO2 series completed with the world record, with no change to the request shapes). The selected points are sent as a compact `mask` (`utils/zoneMask.ts`: 0.1° bit grid, deflate via `CompressionStream`, base64; a few kB instead of up to 14 MB) whenever the browser can build one, otherwise as `points`:
 
 - `fetchZoneData(request, signal?)` → `POST /api/zones/zone-data` (`ZoneDataRequest`: `zone_id`, `zone_name`, `dataset_ids[]`, `points` or `mask`, `time_period`, `aggregation: "mean"`, optional `genre` and `step: "year"`; `ZoneDataResponse`: `dataset_ids` actually combined, `time_period`, `next_time_period`, `audio_data`, `duration_s`, `bar_starts_s`, `values` per dataset, `point_count`)
 - `fetchZoneSeries(request, signal?)` → `POST /api/zones/series` (`ZoneSeriesRequest`: `dataset_ids[]`, `points`; `ZoneSeriesResponse`: `series` per dataset with `units`, `anomaly`, `start`, `yearly`, `values`, plus `missing`)
@@ -130,7 +130,7 @@ Typed client for the backend (types are the exact shapes of `sonification/backen
 - `fetchInstruments(genre?)` → `GET /api/instruments` (instrument names in that genre)
 - `fetchGenres()` → `GET /api/genres` (the Music style menu)
 - `fetchHealth()` → `GET /api/health`
-- `ApiError` with a `kind` (`backendUnavailable`, `serverPreparing`, `noDataForPeriod`, `unknown`); it reads the FastAPI `{detail}` body
+- `ApiError` with a `kind` (`backendUnavailable`, `serverPreparing`, `noDataForPeriod`, `yearStepUnsupported`, `unknown`); it reads the FastAPI `{detail}` body
 - helpers to convert between fractional years and `YYYY-MM` periods
 
 The embedded base64 `audio_data` is played as is (the deployed backend returns no `audio_url`). Requests time out after 30 s.
@@ -167,10 +167,10 @@ const {
   play, pause, retry, seek, seekToYear, setVolume, setTrackEnabled,
   isPlaying, status,            // 'idle' | 'loading' | 'playing' | 'error'
   error, hasEnded, canPlay,
-  position, progress, currentYear, chunkYear, yearRange,
+  currentYear, chunkYear, yearRange,
   currentValue, units, isAnomaly,
   trackStates,
-} = useSonification({ tracks, points, zoneId, zoneName });
+} = useSonification({ tracks, points, zoneId, zoneName, genre });
 ```
 
 There is no per-track volume (the server returns one mixed file); `setVolume` sets the master volume. `canPlay` is false when no zone or no track is selected.
@@ -191,7 +191,7 @@ Builds the track list at runtime from `GET /api/instruments?genre=...` (and `/ap
 
 ### KeyMomentsSection
 
-`components/moments/`, the **Key events** cards under the globe, from `data/keyMoments.ts` (15 events, each with a dataset, a peak month or range, zones and an optional photo with alt text). With a zone selected only its events are listed. Playing a card selects the zone if needed, keeps only the event's dataset on and seeks to a month before the event; "Playing now" marks the card while the music is inside its dates.
+`components/moments/`, the **Key events** cards under the globe, from `data/keyMoments.ts` (22 events, each with a dataset, a peak month or range, zones and an optional photo with alt text). With a zone selected only its events are listed. Playing a card selects the zone if needed, keeps only the event's dataset on and seeks to a month before the event; "Playing now" marks the card while the music is inside its dates.
 
 ### TrackPanel
 
@@ -299,7 +299,7 @@ The Timeline slider handles its own keys when focused: `←` `→` (2%), `Shift`
 
 An **experience switch** (`ExperienceModeSwitch`, toggle buttons with `aria-pressed`) above the globe chooses between **Time travel** (`'zones'`: one zone through the years) and **Vinyl** (`'vinyl'`: the globe becomes a record). The choice is kept by `ExperienceModeContext` in `localStorage` (`earth-jukebox-experience-mode`); switching pauses the other mode's playback and announces the change. Both modes share the track selection of `TrackPanel` and the music style.
 
-- **Geometry** (`utils/vinylGeometry.ts`, pure maths): the globe is seen from above a centre point. A needle starts 70° from the centre and spirals in to 2°; one side has 10 grooves (`VINYL_CHUNKS`) of 30 s, one turn per groove (5 minutes per side). `groovePath` gives the points the needle crosses during groove k (10 bars of 3 s, up to 4 points per bar).
+- **Geometry** (`utils/vinylGeometry.ts`, pure maths): the globe is seen from above a centre point. A needle starts 60° from the centre and spirals in to 4°; one side has 10 grooves (`VINYL_CHUNKS`) of 30 s, one turn per groove (5 minutes per side). `groovePath` gives the points the needle crosses during groove k (10 bars of 3 s, up to 4 points per bar).
 - **Settings** (`useVinylSettings`, `VinylControls`): the month the record plays (or starts from), clamped to the months covered by the enabled tracks with a notice when clamped; the centre, from one of 11 presets (`data/vinylPresets.ts`: North and South Pole, six continents, Pacific, Atlantic and Indian Ocean; default Europe), an exact latitude / longitude, or a click on the globe; how **the needle travels** (radio group): `space` (one date, across places), `time` (one place, the months go by) or `both` (across places, the date moving on by `month` or `year` per groove). Changing the month, the centre, the travel mode, the step or the style lifts the needle back to the rim.
 - **API** (`services/vinylApi.ts`): `space` and `both` call `POST /api/zones/groove` (`fetchGroove`) with the groove's path and the date (in `both`, one date per groove), plus the `genre`; the answer is 30 s of audio and one stop per point, `stops[i]` playing from `i * stop_seconds`, on one global scale per dataset. The groove endpoint has no "next" cursor: the frontend asks for groove k + 1 itself. `time` calls `POST /api/zones/zone-data` on a small disc around the centre (`GROOVE_RADIUS_DEG` = 2°) and chains the chunks with `next_time_period`, like Time travel.
 - **Playback** (`useVinylSonification`, `VinylPlayerBar`): a second `ChunkPlayer`, with grooves mapped onto synthetic periods so chaining, prefetch and abort are reused. The bar has play / pause, previous / next groove and a groove slider (1 to 10); global keys come from `usePlayerShortcuts` (arrows: previous / next groove, `Home` / `End`: first / last).

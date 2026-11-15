@@ -13,7 +13,7 @@ with relative paths such as `../datasets/data`):
 # Create project directory
 mkdir earth-jukebox && cd earth-jukebox
 
-# Clone all repositories (all private except documentation)
+# Clone all repositories
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/webapp.git
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/sonification.git
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/datasets.git          # ~9.1 GB of monthly maps
@@ -293,8 +293,8 @@ Example `.vscode/launch.json` in the parent folder that contains all repositorie
 See [Contributing](../development/contributing.md) for the full guidelines. In short, as practised in the
 repositories so far:
 
-- Work is committed directly to `main` (no long-lived branches, no pull requests yet). Use a short branch and a
-  pull request for larger or risky changes.
+- Small changes are committed directly to `main`; larger ones go through a short branch (`feat/...`, `docs/...`,
+  `perf/...`) and a pull request, squash-merged with the PR number in the subject (e.g. `(#10)`).
 - Commit subjects are short imperative sentences describing the change, e.g.
   `Add Docker support for containerized deployment`,
   `Split precipitation into rain and snow (monthly, 2000-2026)`.
@@ -324,7 +324,7 @@ npx tsc --noEmit
 ```
 
 !!! note
-    Coverage (`npm run test -- --coverage`) needs `@vitest/coverage-v8`, which is not in the devDependencies.
+    Coverage: `npm run test -- --run --coverage` (`@vitest/coverage-v8` is in the devDependencies).
 
 ### Backend Tests
 
