@@ -62,7 +62,6 @@ The backend is never called in tests: `ChunkPlayer` takes an injectable `fetchCh
 | `components/visualization/GlobeView.test.tsx`, `flowSpots.test.ts`, `ListViewWater.test.tsx` | Globe and list views, playback spots layout, axe |
 | `components/ZoneViewSelector.test.tsx`, `data/zones/zones.test.ts` | Zone selector, zone data |
 | `components/about/AboutPage.test.tsx` | About page |
-| `components/AudioPlayer.test.tsx`, `DataVisualizer.test.tsx` | Legacy components (not mounted in the app) |
 | `components/controls/VinylControls.test.tsx`, `player/VinylPlayerBar.test.tsx`, `visualization/VinylGlobeView.test.tsx`, `hooks/useVinylSonification.test.ts`, `services/vinylApi.test.ts`, `utils/vinylGeometry.test.ts` | Vinyl experience mode (in development, uncommitted) |
 
 ### Unit test example: ChunkPlayer

@@ -52,8 +52,7 @@ Until a zone is selected (and at least one track is enabled), the Play button is
 
 ### Help
 
-!!! note
-    A keyboard shortcuts dialog (`KeyboardShortcuts` component, opened with `?`) exists in the code but is not yet mounted in the app, so `?` currently does nothing. Its text also still says "5%" for seeking; the real step is 2%.
+There is no keyboard shortcuts dialog yet: `?` does nothing. The shortcuts are listed on this page.
 
 ---
 
@@ -101,14 +100,19 @@ Navigate by landmark using your screen reader:
 
 ## Audio Transcript
 
-!!! note
-    An `AudioTranscript` component (explanation of the sonification mapping) exists in the code but is **not yet mounted** in the app. There is currently no "Audio Transcript" button and no `T` shortcut. Until it is wired in, the text alternatives are the live announcements of the current value and the visible data on the globe.
-
-The planned transcript explains how data maps to sound (warmer values sound higher, cooler lower), what each instrument represents and the time period covered.
+There is no separate audio transcript yet (no "Audio Transcript" button, no `T` shortcut). The text alternatives are the live announcements of the current value, the hidden data tables of the globe and the graph, and the About page, which explains how data maps to sound.
 
 ---
 
 ## Visual Accessibility
+
+### Light and Dark Themes
+
+- The app follows your system's light or dark appearance (`prefers-color-scheme`) and keeps following it while it changes.
+- The **Dark mode** button in the header is a toggle button: screen readers announce it as "Dark mode, toggle button, pressed" or "not pressed". It works with Tab, then Enter or Space. Your choice is saved in the browser and wins over the system setting.
+- The theme is applied before the page is drawn, so there is no flash of the wrong theme on load.
+- Both themes target the same ratios (below). In the light theme, the yellow brand color is only used as a fill behind navy text, never as text on white, and links and the focus ring use the darker ocean blue.
+- The globe area stays dark in both themes: the NASA Earth texture and the data dots were designed for a dark background.
 
 ### Color Contrast
 
@@ -126,18 +130,36 @@ A **high contrast** theme (black background, white text, 2px borders) and a **co
 - Track availability and "only when present" are shown as text
 - Warm / cool markers (▲ / ▼) are available in color-blind mode
 
+The eight track colors come in **two palettes**, one for dark backgrounds (globe, legend, dark theme) and one for light backgrounds (track panel and data graph in the light theme). Each light color is a darker shade of the same hue, so an instrument keeps its identity across themes. Both palettes were checked with a color-vision simulator (protanopia, deuteranopia) comparing every pair of tracks, not only neighbours, and every color reaches 3:1 against its background:
+
+| Track | Dark background | Light background |
+|-------|-----------------|------------------|
+| Temperature | `#e78615` | `#7f3901` |
+| Rain | `#4070bc` | `#2a53e9` |
+| CO₂ | `#c990fc` | `#8944a0` |
+| Snow | `#52f0fd` | `#1096b5` |
+| Lightning | `#ffe815` | `#998b01` |
+| Night lights | `#38b484` | `#027652` |
+| Fires | `#da154c` | `#d51952` |
+| Sea ice | `#f7f4ee` (ice white) | `#8f75f1` |
+
+!!! note
+    Sea ice on dark backgrounds (`#f7f4ee`, ice white) is the one exception still under review: the validator places it close to snow for people with protanopia. The track name next to each dot and the line's own dash pattern in the graph keep the two apart.
+
+Color is still never the only cue: track names are always written next to their dot or line.
+
 ### Focus Indicators
 
 All focusable elements get a visible focus ring:
 
 ```css
 :focus-visible {
-  outline: 3px solid var(--color-primary); /* #1a73e8 */
+  outline: 3px solid var(--color-focus); /* #f5d078 yellow on dark, #2e5598 ocean blue on light */
   outline-offset: 2px;
 }
 ```
 
-In high contrast mode the ring is a 4px yellow outline. On touch devices (`pointer: coarse`) buttons and inputs have a 44x44px minimum target size.
+In high contrast mode the ring is a 4px outline: yellow on the dark theme, dark blue (`#0000cc`) on the light theme. On touch devices (`pointer: coarse`) buttons and inputs have a 44x44px minimum target size.
 
 ### Reduced Motion
 
@@ -218,7 +240,7 @@ In **Vinyl** mode the player bar has the same Play / Pause and Sounds buttons; t
 
 #### Music style
 
-The **Music style** control (above the sounds list, in both modes) is a native labelled `<select>`. The description of the chosen style is its hint, read after the name (`aria-describedby`). Choosing a style is announced once, politely ("Music style: Funk"); a style restored from your last visit or a reloaded list is not announced. The global player keys (Space, arrows, Home/End, M) are ignored while the select has focus, so the arrows and letters pick a style. In zone mode, changing the style keeps your place: the music goes on from the current month in the new style. In vinyl mode it restarts the record from the edge.
+The **Music style** control (above the sounds list, in both modes) is a native labelled `<select>`. The description of the chosen style is its hint, read after the name (`aria-describedby`). Choosing a style is announced once, politely ("Music style: Funk"); a style restored from your last visit or a reloaded list is not announced. The global player keys (Space, arrows, Home/End, M) are ignored while the select has focus, so the arrows and letters pick a style. The styles are in two labelled groups, **Recommended** (Orchestra and Realistic sounds) and **Just for fun** (the others), which screen readers announce as group names. The (i) button next to the label (hover, focus or click; Escape closes it) says why, and the same text is part of the select's description: the recommended styles are the ones the team worked on most and carry the climate message most clearly; with a fun style selected it adds that the changes in the data are easier to hear with the recommended ones. In zone mode, changing the style keeps your place: the music goes on from the current month in the new style. In vinyl mode it restarts the record from the edge.
 
 #### What the needle travels through
 
@@ -326,6 +348,8 @@ Work in progress, not a certified conformance claim.
 ## Settings for Accessibility
 
 The app stores accessibility preferences in the browser (`localStorage`) and applies them as CSS classes on the page: **high contrast**, **dyslexia-friendly font**, **color-blind mode** and **reduced motion** (initialised from the system setting).
+
+The **light / dark theme** is the exception: it has its own button in the header (see [Light and Dark Themes](#light-and-dark-themes)). High contrast works on top of either theme.
 
 !!! note
     These options exist in the code and translations, but there is currently **no settings menu** in the interface to change them. Use your operating system's reduced motion setting. Slower playback, volume normalization, focus mode and simplified interface are not implemented.

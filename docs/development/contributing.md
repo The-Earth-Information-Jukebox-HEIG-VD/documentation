@@ -107,14 +107,15 @@ Avoid catch-all commits such as `wip: ...`: one change per commit.
 
 ```typescript
 // Good
-// From src/components/AudioTranscript.tsx (abridged)
-interface AudioTranscriptProps {
-  data: ClimateDataPoint[];
-  unit: string;
-  datasetName: string;
+// Illustrative: typed props, a function component, one CSS file next to it
+import './StyleSelector.css';
+
+interface StyleSelectorProps {
+  value: string | undefined;
+  onChange: (genre: string) => void;
 }
 
-export function AudioTranscript({ data, unit, datasetName }: AudioTranscriptProps) {
+export function StyleSelector({ value, onChange }: StyleSelectorProps) {
   // ...
 }
 ```
@@ -139,8 +140,9 @@ def pick_dataset(variables: list[str] | None = None, start: str | None = None) -
 
 ### CSS
 
-- One plain `.css` file per component (e.g. `AudioPlayer.css`), no CSS Modules
-- Use the CSS custom properties from `src/styles/variables.css` for theming
+- One plain `.css` file per component (e.g. `TrackPanel.css`), no CSS Modules
+- Use the CSS custom properties from `src/styles/variables.css` for theming (brand colours come from the logo; see "Visual identity" in `webapp/CLAUDE.md`)
+- Text on a `--color-primary` (yellow) fill uses `--color-on-primary`; separate areas with surface tone and spacing rather than borders
 - Mobile-first responsive design
 - Ensure focus indicators on all interactive elements
 

@@ -68,9 +68,7 @@ webapp/src/
 │   ├── controls/               # TrackPanel, ViewModeToggle, ZoneViewSelector, LanguageSelector,
 │   │                           # InfoTooltip; ExperienceModeSwitch, VinylControls
 │   ├── moments/                # Key moments section
-│   ├── layout/ about/          # Header, Footer, Navigation, About page
-│   └── (legacy, not mounted)   # AudioPlayer, DataVisualizer, DataSelector, InfoPanel,
-│                               # KeyboardShortcuts, AudioTranscript
+│   └── layout/ about/          # Header, Footer, Navigation, About page
 ├── contexts/                   # AccessibilityContext, ViewModeContext, ExperienceModeContext
 ├── i18n/                       # EN / FR / DE (common.json, player.json)
 ├── utils/                      # npy reader, zone cells, zoneMask (compact `mask`), geometry, reading formatter, vinylGeometry, regionName
@@ -79,8 +77,24 @@ webapp/src/
 └── main.tsx
 ```
 
-!!! note "Legacy components"
-    `AudioPlayer`, `DataVisualizer`, `DataSelector`, `InfoPanel`, `KeyboardShortcuts`, `AudioTranscript` and `useAudioContext` still exist in the repository but `App.tsx` does not use them. The live UI is `AudioPlayerEnhanced` (with `Timeline`, `DatePicker` and the optional `SeriesChart`) + `GlobeView`/`ListView` + `TrackPanel`.
+The live UI is `AudioPlayerEnhanced` (with `Timeline`, `DatePicker` and the optional `SeriesChart`) + `GlobeView`/`ListView` + `TrackPanel`.
+
+### Visual identity
+
+The palette comes from the logo (the Earth drawn as a vinyl record; source in `webapp/design/logo-source.png`, web sizes in `webapp/public/`). Tokens live in `src/styles/variables.css`:
+
+| Token | Dark theme | Light theme | Use |
+|---|---|---|---|
+| `--color-primary` | `#f5d078` (label yellow) | `#f5d078` | buttons and selected fills (in light, selected fills add a navy `--selected-ring`) |
+| `--color-on-primary` | `#071327` | `#071327` | text and icons on a yellow fill (never white) |
+| `--color-primary-text` | `#f5d078` | `#7a5500` | the rare yellow-as-text use (yellow fails as text on white) |
+| `--color-link` | `#fbe3a6` | `#2e5598` | links |
+| `--color-focus` | `#f5d078` | `#2e5598` | the 3px `:focus-visible` ring |
+| `--color-secondary` | `#4a6fc7` (ocean blue) | `#4a6fc7` | graphics only; `--color-secondary-text` (`#8ea8e6` / `#2e5598`) for blue text |
+| `--color-land` | `#5a8c7c` (land green) | `#3f7a66` | graphics; `--color-land-text` (`#8fc3ae` / `#2f6b57`) for text |
+| `--color-background` / `--color-surface` | `#071327` / `#0f203e` | `#f6f7fb` / `#ffffff` | page and panels (dark: the logo's ocean, darkened) |
+
+Areas are separated by surface tone and spacing, not borders. Borders remain only on form controls (`--color-control-border`, at least 3:1), on data marks and in high contrast mode. Track colours (`data/trackColors.ts`, one palette per theme, see [Light and dark themes](#light-and-dark-themes)) are data, not brand: the lightning yellow is close to the label yellow, so selected states next to track dots stay neutral.
 
 ---
 
@@ -254,7 +268,7 @@ Implemented in `AudioPlayerEnhanced.tsx` (global, ignored while typing in a fiel
 The Timeline slider handles its own keys when focused: `←` `→` (2%), `Shift` + `←` `→` (one month), `PageUp` / `PageDown` (one year forward / back), `Home` `End`. The skip buttons seek by 10% of the timeline.
 
 !!! note "No `?` help dialog"
-    A `KeyboardShortcuts` modal component (`?`) exists but is not mounted in `App.tsx`, so `?` currently does nothing.
+    There is no keyboard shortcuts dialog, so `?` does nothing.
 
 ---
 
@@ -289,9 +303,19 @@ The interface is available in English, French and German (`src/i18n/locales/{en,
 - Always include visible focus styles
 - Respect `prefers-reduced-motion`
 
+### Light and dark themes
+
+- `variables.css` defines every color token twice: under `:root, [data-theme="dark"]` (the original dark values) and under `[data-theme="light"]`. Components only use `var(--…)`, so they follow the theme without changes.
+- `ThemeContext` (`src/contexts/ThemeContext.tsx`) stores the preference (`system`, `light` or `dark`) under the `localStorage` key `earth-jukebox-theme`, resolves `system` with `matchMedia('(prefers-color-scheme: dark)')`, and sets `data-theme` on `<html>` and the `theme-color` meta tag. `useTheme()` exposes `{ preference, resolvedTheme, toggle }`.
+- A small inline script in `index.html` sets `data-theme` before the first paint, so the page never flashes the wrong theme.
+- Theme-specific helper tokens: `--color-primary-text` (yellow on dark, dark gold `#7a5500` on light, for the rare yellow-as-text use), `--color-link` / `--color-link-hover` (ocean blue `#2e5598` on light, because yellow fails as text on white) and `--color-focus` (the 3px `:focus-visible` outline: yellow on dark, ocean blue on light). Light text tokens are checked at >= 4.5:1 on every light surface (background `#f6f7fb`, surface `#ffffff`, hover `#eceff5`, active `#dfe4ee`).
+- **Dark island:** the globe stage (`.globe-view`, `.vinyl-view`) and the vinyl record SVG carry `data-theme="dark"`. Because custom properties cascade, everything inside it (tooltips, legend, controls) resolves the dark tokens, even in the light theme. The three.js colors (atmosphere, grooves, caps) cannot read CSS variables and stay as constants.
+- **Data colors** come from `src/data/trackColors.ts`: `trackColor(id, surface)` returns the dark or light palette. Use `resolvedTheme` for page surfaces (track panel, data graph) and always `'dark'` for anything drawn on the globe stage. Validate any palette change with the dataviz validator (`--mode light --surface "#f6f7fb" --pairs all`, and `--mode dark --surface "#1a1f2e"`).
+- `.high-contrast` is scoped as `:root.high-contrast` so it overrides both themes.
+
 ```css
 .button:focus-visible {
-  outline: 3px solid var(--color-primary);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
