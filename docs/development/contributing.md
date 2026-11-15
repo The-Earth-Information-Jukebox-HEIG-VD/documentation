@@ -279,7 +279,7 @@ Closes #123
 
 ### 4. Review Process
 
-Run the checks locally before opening the PR: there is no CI test workflow (see [CI/CD](../deployment/ci-cd.md)).
+Run the checks locally before opening the PR. In the webapp, the `CI` workflow also runs the lint, the tests and the build on the PR; the backend tests only run locally (see [CI/CD](../deployment/ci-cd.md#tests-and-linting)).
 
 ---
 

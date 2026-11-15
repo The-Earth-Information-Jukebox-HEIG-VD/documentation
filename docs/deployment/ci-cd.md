@@ -7,11 +7,12 @@ Continuous Integration and Deployment with GitHub Actions.
 ## Overview
 
 Each repository of the [organization](https://github.com/The-Earth-Information-Jukebox-HEIG-VD) carries its own
-workflows. There is no test workflow and no automatic deployment of the application: images are published on
-version tags, and the documentation is published on every push to `main`.
+workflows. The webapp is linted, tested and built on every push to `main` and every pull request; there is no
+automatic deployment of the application: images are published on version tags, and the documentation is published on every push to `main`.
 
 | Repository | Workflow | Trigger | Does |
 |------------|----------|---------|------|
+| `webapp` | `.github/workflows/ci.yml` | push to `main`, pull request | Lint (with `jsx-a11y`), tests, build (type check + Vite) |
 | `webapp` | `.github/workflows/docker-publish.yml` | tag `v*`, push to branch `fb-docker-support`, manual | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/webapp`, then the GitHub release |
 | `sonification` | `.github/workflows/docker-publish.yml` | tag `v*`, push to branch `fb-docker-support`, manual | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/sonification`, then the GitHub release |
 | `datasets` | `.github/workflows/docker-publish.yml` | tag `v*`, manual | Build + push `ghcr.io/the-earth-information-jukebox-heig-vd/datasets`, then the GitHub release |
@@ -203,21 +204,19 @@ must be set to **GitHub Actions** (Settings → Pages).
 
 ## Tests and Linting
 
-There is **no CI test workflow** on GitHub. Run the checks locally before pushing:
+In the webapp, `.github/workflows/ci.yml` runs on every push to `main` and every pull request: `npm ci`, then
+`npm run lint` (ESLint, including `jsx-a11y`), `npx vitest run` and `npm run build` (type check + Vite build), on
+Node 22 like the Dockerfile. The backend tests have no workflow yet. Run the checks locally before pushing:
 
 ```bash
 # webapp
 npm run lint
-npx tsc --noEmit
-npm run test -- --run
+npx vitest run
+npm run build
 
 # sonification
 python -m pytest backend simulation -q
 ```
-
-!!! note "GitLab CI leftover"
-    `webapp/.gitlab-ci.yml` defines lint / typecheck / test / build stages and a GitLab Pages deploy on tags.
-    The repository is hosted on GitHub, so this pipeline does not run.
 
 ---
 

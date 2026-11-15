@@ -15,7 +15,7 @@ Guide for testing Earth Information Jukebox.
 | Runtime a11y checks | axe-core (dev only) | browser console | Violations while developing |
 
 !!! note "Not set up yet"
-    There are no end-to-end tests (Playwright is not installed), no coverage thresholds (`@vitest/coverage-v8` is installed: `npx vitest run --coverage`), and no CI workflow that runs the tests. The only GitHub Actions workflow in `webapp` builds and publishes the Docker image.
+    There are no end-to-end tests (Playwright is not installed), no coverage thresholds (`@vitest/coverage-v8` is installed: `npx vitest run --coverage`), and no CI workflow for the backend tests. In `webapp`, the `ci.yml` workflow runs the lint, the tests and the build on every push to `main` and every pull request; `docker-publish.yml` builds and publishes the Docker image. See [CI/CD](../deployment/ci-cd.md#tests-and-linting).
 
 ---
 
