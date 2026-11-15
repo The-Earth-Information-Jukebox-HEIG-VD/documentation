@@ -1,0 +1,25 @@
+# Version tags (v*) become GitHub releases, with notes generated from the commits
+# since the previous tag. This repository publishes no image, so this is the whole job.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create the GitHub release (notes from the commits since the previous tag)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $TAG already exists"
+          else
+            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --verify-tag --generate-notes --title "$TAG"
+          fi

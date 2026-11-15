@@ -118,6 +118,11 @@ Each push produces `:1.5.0`, `:1.5` and `:latest` (the version variables in `.en
 `DATASETS_VERSION` in `deployment/.env` and pull (see [Production](production.md#updating)). Each image has its own
 version, so the webapp, the backend and the data can be released independently.
 
+Once the image is pushed, the workflow's `release` job creates the GitHub release for the tag (`gh release create
+--generate-notes`, notes from the commits since the previous tag), so the repository's "Releases" box follows the
+tags. `documentation`, `deployment` and `data_processing` publish no image: their `release.yml` workflow only does
+that step on each `v*` tag. A release that already exists is left as it is.
+
 !!! note
     The `datasets` image contains all of `datasets/data` (~9.1 GB at the moment); expect a long build and push.
     Packages created from private repositories are private: deployment hosts need `docker login ghcr.io`.
