@@ -209,7 +209,7 @@ The data is a snapshot stored in the `datasets` repository; it is not updated li
 
 | Dataset | Period | Time step |
 |---------|--------|-----------|
-| Temperature anomaly (GISTEMP) | 1880-01 → 2025-12 | Monthly |
+| Temperature anomaly (GISTEMP) | 1880-01 → 2025-12 (shown from 1920-01 in the app) | Monthly |
 | Rain (GPM IMERG) | 2000-06 → 2026-11 | Monthly |
 | Snow (GPM IMERG) | 2000-06 → 2026-11 | Monthly |
 | CO2 | 2002-09 → 2022-03 | Monthly |

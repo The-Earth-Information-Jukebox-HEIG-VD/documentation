@@ -51,7 +51,7 @@ The globe always sits on a dark "space" background, even in the light theme, so 
 │  Key events:  [El Niño 2015–16] [Black Summer] ...  (cards)   │
 ├──────────────────────────────────────────────────────────────┤
 │  (data graph, when Graph is on)                               │
-│  [⏮] [▶] [⏭] [Mar 1998] [Months] 1880 ──●── 2025 🔊 [Graph] [Sounds]│
+│  [⏮] [▶] [⏭] [Mar 1998] [Months] 1920 ──●── 2025 🔊 [Graph] [Sounds]│
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -79,7 +79,7 @@ The **What do you want to hear?** panel sits next to the globe. Its heading is a
 For each track the panel shows:
 
 - the dataset name and the **instrument** that plays it
-- the **period** covered ("From 1880 to 2025")
+- the **period** covered ("From 1920 to 2025")
 - "only when present" for instruments that are silent when their phenomenon is absent (every track except temperature and CO2, which always play)
 - tracks the server has no data for are greyed out and marked "Not available on the server"
 
@@ -91,7 +91,9 @@ The **Music style** menu above the sounds list chooses how the data is played. *
 
 ### Choose the Time
 
-There is no duration field. The timeline always spans the period covered by the enabled tracks (for temperature, 1880 to 2025):
+There is no duration field. The timeline always spans the period covered by the enabled tracks (for temperature, 1920 to 2025). It never starts before 1920: only the temperature anomaly goes further back (to 1880), so starting about 100 years ago keeps the app easier to use, and the dates cover the lifetime of almost everyone alive today.
+
+To move in time:
 
 - click or drag the **timeline** to jump to a year
 - press the **date** shown left of the timeline (for example "Mar 1998") to open **Go to a date**: choose a year and a month, then **Go** (months after the last data month are disabled; **Close** or Escape closes it without moving)
@@ -126,7 +128,7 @@ Each card gives the dataset you will hear, the zone, the months when the event s
 
 ### One Month Through the Years
 
-The **Months** selector in the player chooses what the timeline plays: **Every month** (the default), or one month only, for example **Only July**, to follow July from 1880 to 2025 with the tracks you enabled. The timeline, the date, the globe and the data graph then show that month of each year (one point per year on the graph, and a table of that month's values for screen readers); `Shift` + `←` / `→` on the timeline moves one year. The app remembers the choice.
+The **Months** selector in the player chooses what the timeline plays: **Every month** (the default), or one month only, for example **Only July**, to follow July from 1920 to 2025 with the tracks you enabled. The timeline, the date, the globe and the data graph then show that month of each year (one point per year on the graph, and a table of that month's values for screen readers); `Shift` + `←` / `→` on the timeline moves one year. The app remembers the choice.
 
 Each bar of music is then one year: the instruments are scaled on that month over all the years, so a warmer July is a higher note than a colder July.
 
