@@ -214,7 +214,25 @@ During playback the globe also has a visually hidden table (caption with the zon
 
 ### Vinyl Mode (in development)
 
-In **Vinyl** mode the player bar has the same Play / Pause and Sounds buttons; the shortcuts above apply, but `←` / `→` move to the previous / next groove and `Home` / `End` to the first / last. The groove slider is a native range input with a label ("Groove k of n") and a spoken value (groove, elapsed and total time). The record image is `role="img"` with a label (centre and month), and a visually hidden table with a caption lists the values of the playing chunk. `Escape` has no function in this mode.
+In **Vinyl** mode the player bar has the same Play / Pause and Sounds buttons; the shortcuts above apply, but `←` / `→` move to the previous / next groove and `Home` / `End` to the first / last. The groove slider is a native range input with a label ("Groove k of n") and a spoken value (groove, elapsed and total time, plus the date when the date moves). The record image is `role="img"` with a label (centre and month), and a visually hidden table with a caption lists the values of the playing chunk. `Escape` has no function in this mode.
+
+#### Music style
+
+The **Music style** control (above the sounds list, in both modes) is a native labelled `<select>`. The description of the chosen style is its hint, read after the name (`aria-describedby`). Choosing a style is announced once, politely ("Music style: Funk"); a style restored from your last visit or a reloaded list is not announced. The global player keys (Space, arrows, Home/End, M) are ignored while the select has focus, so the arrows and letters pick a style. In zone mode, changing the style keeps your place: the music goes on from the current month in the new style. In vinyl mode it restarts the record from the edge.
+
+#### What the needle travels through
+
+The fieldset **"The needle travels through"** has three radio buttons, each with a short name (Space, Time, Both) and its explanation as a description:
+
+- **Space**: one date, the needle crosses places.
+- **Time**: one place, the months go by. The needle stays on the centre.
+- **Both**: the needle crosses places and the date moves on each groove. A **"The date moves on by"** select (one month or one year per groove) appears only in this case; otherwise it is removed from the page, so it is neither focusable nor read by screen readers.
+
+Arrow keys on the radios change the radio, not the groove (global shortcuts ignore form fields). Changing the choice restarts the record from the edge, as the group's description says. When the date moves, the first fieldset is called "Starting month".
+
+The real date is available as text in several places: the player bar ("Date: April 2020"), the caption on the globe, the slider's spoken value, a **Date** column in the hidden table (a range such as "March 2020 to November 2020" when a groove covers several months), and the announcement of each groove ("Groove 3 of 12, May 2020, near the Sahara: ..."). The announcement is made once per groove (about every 30 seconds), never on each month, and the visible date is not a live region, so it does not interrupt you.
+
+In Time mode the globe shows no moving trail, only one spot on the centre, whose colour and size follow the first selected dataset that has a value. Its text alternative is the record's label ("the needle stays on the centre ... a spot at the centre shows the data") and the hidden table, which has every value. The spot does not move or animate, so it is the same with reduced motion; the spot is never the only carrier of information.
 
 ### Data Graph
 
