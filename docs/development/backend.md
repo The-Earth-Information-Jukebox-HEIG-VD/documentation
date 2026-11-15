@@ -21,7 +21,7 @@ uvicorn backend.app:app --reload --port 8000
 API docs at http://localhost:8000/docs
 
 !!! warning "Audio needs more than pip"
-    MP3 output needs `ffmpeg` on the PATH. Without `tinysoundfont` (or `ffmpeg`) `GET /api/health` reports `audio_rendering` / `mp3_encoding` as `false` and `POST /api/sonify` answers `503`. Optional orchestral samples: `python music/sampler.py --download` (~440 MB).
+    MP3 output needs `ffmpeg` on the PATH. Without `tinysoundfont` (or `ffmpeg`) `GET /api/health` reports `audio_rendering` / `mp3_encoding` as `false` and `POST /api/sonify` answers `503`. Optional orchestral samples: `python music/sampler.py --download` (~440 MB). The recordings of the realistic mode: `python music/soundscape.py --download` (`realistic_sounds` in `GET /api/health`).
 
 The server needs data to play. Either point `JUKEBOX_DATA_DIR` at converted datasets, or convert the team's raw folders from the `datasets` repository:
 
@@ -49,6 +49,9 @@ sonification/
 │   ├── orchestra.py        # instrument definitions (ORCHESTRA) + score composition
 │   ├── zone_to_midi.py     # zones, scales, one variable -> MIDI
 │   ├── groove.py           # vinyl mode: values along a path in space at one date
+│   ├── eras.py             # genres (GENRES) and music through the ages (ERAS)
+│   ├── soundscape.py       # realistic mode: recordings and synthesised sounds
+│   ├── urgency.py          # global CO2 record (Law Dome + Mauna Loa) that sets the tempo
 │   ├── composition.py      # tempo map, harmony helpers
 │   ├── midi_writer.py
 │   ├── sampler.py          # SFZ sampler (VSCO 2 CE orchestral samples)
@@ -72,7 +75,7 @@ sonification/
 | `JUKEBOX_CACHE_DIR` | `backend/cache` (`/app/cache` in Docker) | Generated compositions (safe to delete); must be writable |
 | `JUKEBOX_BUILT_DIR` | `<cache>/_datasets` | Datasets converted from the raw folders by `prepare_data.py`; scanned in addition to `JUKEBOX_DATA_DIR` |
 | `JUKEBOX_CORS` | `*` | Allowed CORS origins, comma-separated |
-| `JUKEBOX_FULL_API` | `1` (`0` in Docker) | `0` serves only `/api/health`, `/api/instruments`, `/api/sonify`, `/api/zones/zone-data`, `/api/zones/series` and `/api/zones/groove` |
+| `JUKEBOX_FULL_API` | `1` (`0` in Docker) | `0` serves only `/api/health`, `/api/instruments`, `/api/genres`, `/api/sonify`, `/api/zones/zone-data`, `/api/zones/series` and `/api/zones/groove` |
 | `JUKEBOX_MERGE_DATASETS` | `0` (`1` in Docker) | `1`: each requested variable is read from its own dataset and lined up by date |
 | `JUKEBOX_CHUNK_SECONDS` | `30` | Length of one piece returned by `/api/sonify` |
 | `JUKEBOX_PREPARE` | `1` | `serve.py` only: `0` skips the raw-data conversion at start-up |
@@ -92,6 +95,11 @@ temperature_anomaly_1880_2025/temperature_anomaly_<YYYY>_<MM>.npy
 lightning_2017_2023/lightning_<YYYY>_<MM>.npy              (share of each pixel with lightning, 0-1)
 co2_2002_2022/co2_<YYYY>_<MM>.npy                          (ppm)
 fires_2002_2026/fires_<YYYY>_<MM>.npy                      (days of the month with a fire)
+sea_ice_1979_2026/sea_ice_<YYYY>_<MM>.npy                  (% of the cell covered by ice, land = NaN)
+vegetation_ndvi_2000_2026/ndvi_<YYYY>_<MM>.npy             (NDVI -0.2 to 1, ocean = NaN)
+carbon_monoxide_2000_2024/co_<YYYY>_<MM>.npy               (10^18 molecules/cm², total column)
+chlorophyll_2002_2026/chlorophyll_<YYYY>_<MM>.npy          (mg/m³, land and clouds = NaN)
+rain_belt_2000_2026/rain_belt_<YYYY>_<MM>.npy              (one value per latitude row; not used)
 ```
 
 At start-up `serve.py` runs `prepare_data.py` in the background. It converts those folders into the datasets below in `<cache>/_datasets`:
@@ -105,9 +113,13 @@ At start-up `serve.py` runs `prepare_data.py` in the background. It converts tho
 | `real_lightning_2017_2023` | lightning activity, 1°, 55°S to 55°N |
 | `real_co2_2002_2022` | CO₂, 1°, map-outline pixels removed |
 | `real_fires_2002_2026` | fires (days of the month with a fire), 1° |
+| `real_sea_ice_1979_2026` | sea ice (% of the sea frozen), 1°; no 1987-12 and 1988-01 |
+| `real_vegetation_2000_2026` | vegetation (NDVI), 1°, land only |
+| `real_carbon_monoxide_2000_2024` | carbon monoxide, 1°; 20 months missing at the source |
+| `real_chlorophyll_2002_2026` | ocean chlorophyll, 1°, sea only, `log_scale` |
 
 - The API answers at once; `GET /api/health` has `"preparing_data": true` until the conversion is over, and each dataset appears in `GET /api/datasets` when ready. The first start takes a few minutes; with the cache on a volume, later starts only rebuild what changed.
-- The recipes are the `RECIPES` list at the top of `backend/prepare_data.py`. A folder it does not know is ignored; all seven folders of the `datasets` repository have a recipe.
+- The recipes are the `RECIPES` list at the top of `backend/prepare_data.py`. A folder it does not know is ignored: eleven of the twelve folders of the `datasets` repository have a recipe (`INPUTS` lists their file patterns); the rain belt has none and is not used.
 - Ready-made `<prefix>_<variable>.npz` + `.json` files placed directly in `JUKEBOX_DATA_DIR` are served as before.
 - The CO₂ maps still carry the outline of the source picture; the converter sets those pixels to NaN, so very small areas can have little or no CO₂ in some months.
 
@@ -120,11 +132,12 @@ See the [API reference](../api/reference.md) for schemas.
 | Method | Path | Served when `JUKEBOX_FULL_API=0` | Description |
 |--------|------|:---:|-------------|
 | GET | `/api/health` | yes | Status, `preparing_data`, `audio_rendering` |
-| GET | `/api/instruments` | yes | Dataset-to-instrument mapping (webapp call) |
+| GET | `/api/instruments` | yes | Dataset-to-instrument mapping (webapp call); `?genre=` names the instruments of that genre |
+| GET | `/api/genres` | yes | The music styles (webapp's Music style menu) |
 | POST | `/api/sonify` | yes | One 30 s audio chunk |
 | POST | `/api/zones/zone-data` | yes | Same as `/api/sonify` with the webapp's field names (`dataset_ids`); the webapp's call |
 | POST | `/api/zones/series` | yes | Monthly series of the selected points, no audio (the webapp's data graph) |
-| POST | `/api/zones/groove` | yes | Vinyl mode (v2.6): the music of a path in space at one fixed date |
+| POST | `/api/zones/groove` | yes | Vinyl mode (v2.6, `genre` since v2.10): the music of a path in space at one fixed date |
 | GET | `/api/options` | no | UI menu options (zones, palettes, scales...) |
 | GET | `/api/datasets` | no | Available datasets |
 | POST | `/api/sonify/debug` | no | `/api/sonify` with the engine's knobs and a detailed answer |
@@ -132,7 +145,7 @@ See the [API reference](../api/reference.md) for schemas.
 | GET | `/api/compositions/{id}` | no | Fetch an earlier composition |
 | GET | `/api/files/{id}/{file}` | no | Download a generated file |
 
-The deployed image serves only the first six rows (`FRONTEND_PATHS` in `backend/app.py`). Use `-e JUKEBOX_FULL_API=1` to also serve the engine's endpoints.
+The deployed image serves only the first seven rows (`FRONTEND_PATHS` in `backend/app.py`). Use `-e JUKEBOX_FULL_API=1` to also serve the engine's endpoints. A backend run from source (`uvicorn backend.app:app`) serves everything by default. The API version (`API_VERSION`, reported by `GET /api/health`) is `2.14`.
 
 ---
 
@@ -173,7 +186,8 @@ ORCHESTRA = {
     "precipitation":       dict(name="Rain - Violins (melody)", role="melody", program=48, channel=1,
                                 low=67, high=91, gain=2.5, gate=0.10, levels=[0.35, 0.65], level=0.90, pan=36,
                                 tremolo=4),
-    # ... co2, snowfall, lightning, nightlights, aerosol_dust, aerosol_smoke
+    # ... co2, snowfall, lightning, fires, nightlights, sea_ice, vegetation, carbon_monoxide,
+    #     chlorophyll, aerosol_dust, aerosol_smoke
 }
 ```
 
@@ -182,9 +196,10 @@ The full instrument table is in [Sonification Development](sonification.md#the-o
 ### Adding a New Instrument
 
 1. Add the variable to `ORCHESTRA` in `music/orchestra.py` (role, GM program, register).
-2. Provide its data (a recipe in `backend/prepare_data.py` / `SOURCES` in `simulation/build_monthly_dataset.py`).
-3. Add its `dataset_id` to `SHORT_IDS` (and `VARIABLE_ALIASES`) in `backend/app.py`.
-4. The composer and the sampler pick it up from `ORCHESTRA`.
+2. Provide its data (a pattern in `INPUTS` and a recipe in `RECIPES` of `backend/prepare_data.py`, a line in `SOURCES` of `simulation/build_monthly_dataset.py`).
+3. Give it an instrument in each genre (`music/eras.py`) and a sound in the realistic mode (`music/soundscape.py`).
+4. Add its `dataset_id` to `SHORT_IDS` (and `VARIABLE_ALIASES`) in `backend/app.py` if it differs from the variable name.
+5. The composer and the sampler pick it up from `ORCHESTRA`. On the webapp side, add a globe layer in `datasetRegistry.ts` and a colour in `trackColors.ts`.
 
 ---
 

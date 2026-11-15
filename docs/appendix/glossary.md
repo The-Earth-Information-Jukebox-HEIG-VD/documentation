@@ -23,14 +23,20 @@ The Web Audio API's central object for generating and processing audio. Must be 
 A reference period used for comparison. GISTEMP uses 1951-1980 as the baseline for temperature anomalies.
 
 ### BPM (Beats Per Minute)
-The tempo of music, measuring how many beats occur in one minute. The default of the engine's `/api/compose` endpoint is 76 BPM; `/api/sonify` fits 10 bars (10 months of data) into each 30-second chunk.
+The tempo of music, measuring how many beats occur in one minute. Each music style has its own reference tempo (76 BPM for the orchestra and the realistic mode, 96 to 150 for the other genres). By default the tempo of each bar is that reference x0.8 to x1.25, following the global CO2 of the bar's month (see [Tempo](#tempo)).
 
 ---
 
 ## C
 
 ### Chunk
-A 30-second MP3 returned by `POST /api/zones/zone-data` (the webapp's call) or `POST /api/sonify`, covering 10 months of data (one bar per month). The response also gives `next_time_period`, the start of the next chunk; the webapp plays the chunks back to back.
+A 30-second MP3 returned by `POST /api/zones/zone-data` (the webapp's call) or `POST /api/sonify`, covering about 8 months of data in 1880 and 12 to 13 today (one bar per month; the tempo rises with the CO2, so later chunks hold more bars). The response also gives `duration_s`, `bar_starts_s` (the start second of each bar) and `next_time_period`, the start of the next chunk; the webapp plays the chunks back to back.
+
+### Carbon Monoxide (CO)
+A gas from fires and traffic. The dataset is the MOPITT total column (10^18 molecules/cm²), played by the bassoon above the clean background (1.4 × 10^18).
+
+### Chlorophyll
+Chlorophyll-a in the ocean (mg/m³), a measure of plankton, from MODIS Aqua. Played by the vibraphone on a log scale (each tenfold step is the same pitch step); sea only.
 
 ### Common Grid
 The team's shared map grid: 720×1440 pixels of 0.25° covering the whole globe (row 0 = 90°N, column 0 = 180°W). Every dataset uses it, so the same `[row, column]` is the same place in every dataset.
@@ -48,9 +54,15 @@ In musical style compositions, the section highlighting the most anomalous or dr
 ### Data Sonification
 See [Sonification](#sonification).
 
+### Data Style
+The default composition style of the engine (and the only one the webapp uses): every note comes from the data, one bar per month, no intro.
+
 ---
 
 ## E
+
+### Eras
+An optional engine mode (`"eras": true`) in which each bar takes the musical style of its date, from a Romantic orchestra before 1910 to modern pop and trap from 2010. Not used by the webapp, and not combined with a genre.
 
 ### EarthChestra
 The name of the app (webapp title). "Earth Information Jukebox" is the name of the project and of the NASA Space Apps challenge it answers.
@@ -69,11 +81,17 @@ A single time step in the intensity map data. In the current datasets one frame 
 
 ## G
 
+### Genre
+See [Music Style](#music-style).
+
 ### GISTEMP
 GISS Surface Temperature Analysis. NASA's estimate of global surface temperature change, maintained by the Goddard Institute for Space Studies.
 
 ### GPM IMERG
 Global Precipitation Measurement, Integrated Multi-satellitE Retrievals for GPM. NASA's precipitation product, source of the rain and snow datasets.
+
+### Groove
+In vinyl mode, one turn of the needle's spiral: 30 seconds of music. A record has ten grooves. The webapp sends the path of each groove to `POST /api/zones/groove`.
 
 ### Grid
 The spatial resolution of data. A 1° grid means data is available at 1-degree latitude/longitude intervals (180×360 cells globally). The datasets are stored on a 0.25° grid (720×1440, see [Common Grid](#common-grid)); the backend resamples them to 1° or 2° for composition.
@@ -95,6 +113,12 @@ In musical style, an opening section where instruments enter one by one, introdu
 
 ## M
 
+### MOPITT
+Measurements Of Pollution In The Troposphere, an instrument of the Canadian Space Agency on NASA's Terra satellite. Source of the carbon monoxide dataset.
+
+### Music Style
+How the data is played, chosen in the webapp's **Music style** menu and sent as `genre`: `orchestra` (default), `realistic` (the sound of each phenomenon), or one of seven genres (`ragtime`, `swing`, `rocknroll`, `funk`, `synthpop`, `house`, `trap`). The list comes from `GET /api/genres`.
+
 ### MIDI (Musical Instrument Digital Interface)
 A technical standard for communicating musical information. MIDI files contain note data but no actual audio.
 
@@ -105,11 +129,17 @@ A static site generator for documentation, using Markdown files. We use MkDocs M
 
 ## N
 
+### NDVI
+Normalized Difference Vegetation Index, from -0.2 to 1: how green the land is. From MODIS Terra; played by the clarinet, silent over deserts and the sea.
+
+### NSIDC Sea Ice Index
+The National Snow and Ice Data Center's monthly sea ice concentration, source of the sea ice dataset (% of each cell covered by ice, 1979 onwards).
+
 ### NPY
 NumPy's single-array file format. The `datasets` repository stores one `.npy` per month and per dataset (720×1440).
 
 ### NPZ
-NumPy's compressed archive format for saving multiple arrays. Used by the backend for the intensity maps it prepares from the `.npy` files.
+NumPy's archive format for saving multiple arrays. Used by the backend for the intensity maps it prepares from the `.npy` files (written uncompressed since API v2.5, for faster reading).
 
 ### Normalization
 Scaling values to a standard range (typically 0-1) for consistent processing.
@@ -145,6 +175,9 @@ In music, snapping pitches to a specific scale (major, minor, pentatonic) rather
 
 ## R
 
+### Realistic Mode
+The `realistic` music style: no instruments, each dataset is heard as the sound of what it is (rain, campfire, thunder, city traffic, street-lamp hum, crickets, singing ice, bubbles), with a heartbeat at the CO2's tempo. Recordings are free (CC0, public domain, CC BY); some sounds are synthesised.
+
 ### React
 A JavaScript library for building user interfaces, used for the frontend.
 
@@ -178,7 +211,7 @@ Scientific Visualization Studio. NASA's facility for creating visualizations of 
 ## T
 
 ### Tempo
-The speed of music, measured in BPM (beats per minute).
+The speed of music, measured in BPM (beats per minute). By default (API v2.13) the tempo of each bar follows the global CO2 of its month: the style's tempo x0.8 at 290 ppm (1880) to about x1.23 today, so the music speeds up over the decades. The engine can follow the zone's temperature instead (`tempo_source: "temperature"`). In vinyl Space and Both the tempo is fixed.
 
 ### Tension
 A 0-1 value indicating how anomalous or dramatic a moment is in the data. Higher tension can trigger minor mode or more intense instrumentation.
@@ -189,6 +222,9 @@ A typed superset of JavaScript used for the frontend, providing better tooling a
 ---
 
 ## V
+
+### Vinyl Mode
+The webapp's second way to listen: the globe becomes a record centred on a place. The needle travels across places (Space), through time on one place (Time), or both, with the date moving on by a month or a year per groove.
 
 ### Velocity
 In MIDI, the force or speed of a note (0-127). Higher velocity = louder sound.
@@ -242,10 +278,13 @@ A geographic region for sonification. In the webapp, a continent, country, ocean
 | LIS | Lightning Imaging Sensor |
 | MIDI | Musical Instrument Digital Interface |
 | MODIS | Moderate Resolution Imaging Spectroradiometer |
+| MOPITT | Measurements Of Pollution In The Troposphere |
 | MP3 | MPEG-1 Audio Layer III |
 | NASA | National Aeronautics and Space Administration |
+| NDVI | Normalized Difference Vegetation Index |
 | NPY | NumPy array file |
-| NPZ | NumPy Zip (compressed archive) |
+| NPZ | NumPy Zip archive |
+| NSIDC | National Snow and Ice Data Center |
 | PCM | Pulse-Code Modulation |
 | REST | Representational State Transfer |
 | SVS | Scientific Visualization Studio |

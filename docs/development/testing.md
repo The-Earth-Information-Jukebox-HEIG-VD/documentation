@@ -27,7 +27,7 @@ Guide for testing Earth Information Jukebox.
 cd webapp
 npm install
 npm run test            # Vitest in watch mode
-npx vitest run          # single run (currently 16 files, 112 tests)
+npx vitest run          # single run (currently 50 test files)
 npx vitest run src/audio/ChunkPlayer.test.ts   # one file
 ```
 
@@ -53,7 +53,10 @@ The backend is never called in tests: `ChunkPlayer` takes an injectable `fetchCh
 | `hooks/useInstruments.test.ts` | Track list built from `/api/instruments` |
 | `hooks/useZoneDataFrames.test.ts` | Month-by-month dataset loading |
 | `hooks/useZoneSeries.test.ts` | Data graph series (`POST /api/zones/series`), cache |
-| `hooks/usePlaybackPosition.test.ts`, `useLocalStorageBoolean.test.ts`, `useCompactOnScroll.test.ts` | Position store, persisted preferences, compact header |
+| `hooks/usePlaybackPosition.test.ts`, `useLocalStorageBoolean.test.ts`, `useLocalStorageString.test.ts`, `useCompactOnScroll.test.ts` | Position store, persisted preferences, compact header |
+| `hooks/useMusicStyle.test.ts`, `components/controls/StyleSelector.test.tsx`, `utils/instrumentName.test.ts` | Music style menu (`GET /api/genres`), recommended / fun groups, instrument names per genre |
+| `hooks/useSonification.jumpTo.test.ts`, `services/monthTravel.test.ts`, `components/player/MonthTravelControl.test.tsx` | Jumping to a key event, one month year after year (`step: "year"`) |
+| `data/keyMoments.test.ts`, `components/moments/KeyMomentsSection.test.tsx` | The 15 key events and their cards |
 | `hooks/trackColors.test.ts`, `data/trackColors.test.ts` | Track colours |
 | `utils/npy.test.ts`, `zoneCells.test.ts`, `zoneMask.test.ts`, `reading.test.ts`, `zoneName.test.ts`, `geometry.test.ts`, `motion.test.ts` | `.npy` parsing, zone grid cells, compact `mask`, value formatting, zone names, geometry, reduced motion |
 | `components/player/AudioPlayerEnhanced.test.tsx` | Blocked Play, live regions, axe |
@@ -61,8 +64,9 @@ The backend is never called in tests: `ChunkPlayer` takes an injectable `fetchCh
 | `components/controls/TrackPanel.test.tsx` | "What do you want to hear?" panel (toggles, disclosure), axe |
 | `components/visualization/GlobeView.test.tsx`, `flowSpots.test.ts`, `ListViewWater.test.tsx` | Globe and list views, playback spots layout, axe |
 | `components/ZoneViewSelector.test.tsx`, `data/zones/zones.test.ts` | Zone selector, zone data |
-| `components/about/AboutPage.test.tsx` | About page |
-| `components/controls/VinylControls.test.tsx`, `player/VinylPlayerBar.test.tsx`, `visualization/VinylGlobeView.test.tsx`, `hooks/useVinylSonification.test.ts`, `services/vinylApi.test.ts`, `utils/vinylGeometry.test.ts` | Vinyl experience mode (in development, uncommitted) |
+| `components/about/AboutPage.test.tsx`, `components/howto/HowToPage.test.tsx` | About and How to use pages |
+| `components/layout/SpinningLogo.test.tsx`, `ThemeToggle.test.tsx`, `contexts/ThemeContext.test.tsx` | Animated logo (decorative, still with reduced motion), light / dark theme |
+| `components/controls/VinylControls.test.tsx`, `player/VinylPlayerBar.test.tsx`, `visualization/VinylGlobeView.test.tsx`, `visualization/vinylTrail.test.ts`, `hooks/useVinylSettings.test.ts`, `hooks/useVinylSonification.test.ts`, `services/vinylApi.test.ts`, `utils/vinylGeometry.test.ts` | Vinyl mode: travel space / time / both, grooves on `POST /api/zones/groove` |
 
 ### Unit test example: ChunkPlayer
 

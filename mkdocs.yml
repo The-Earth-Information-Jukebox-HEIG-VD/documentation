@@ -8,6 +8,7 @@ repo_name: The-Earth-Information-Jukebox-HEIG-VD/documentation
 
 theme:
   name: material
+  custom_dir: overrides
   logo: assets/logo.png
   favicon: assets/favicon.png
   palette:
@@ -36,6 +37,9 @@ theme:
 
 extra_css:
   - stylesheets/brand.css
+
+extra_javascript:
+  - javascripts/logo.js
 
 nav:
   - Home: index.md

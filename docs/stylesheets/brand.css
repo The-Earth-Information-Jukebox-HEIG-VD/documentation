@@ -31,7 +31,100 @@
 }
 
 /* The logo is a round disc: give it a little more room than the default icon */
-.md-header__button.md-logo img {
+.md-header__button.md-logo img,
+.md-nav__button.md-logo img {
   height: 2rem;
   width: 2rem;
+}
+
+/*
+ * Logo tonearm (overrides/partials/logo.html), ported from the webapp's
+ * SpinningLogo.css. The arm rests beside the record (-25deg); on the first
+ * page of a visit (.spinning-logo--play, javascripts/logo.js) it swings onto
+ * the record, the record turns once, and the arm swings back. 3.2 s, once.
+ * Brass arm on the navy header in both schemes.
+ */
+.spinning-logo {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 0;
+  margin-right: 0.3rem; /* room for the arm at rest */
+}
+
+/* Material sizes every svg in .md-logo to 1.2rem: the arm must match the disc box */
+.spinning-logo__arm,
+.md-logo .spinning-logo .spinning-logo__arm {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.spinning-logo__arm-swing {
+  transform-box: view-box;
+  transform-origin: 94px 6px;
+  transform: rotate(-25deg);
+}
+
+.spinning-logo__tube-outline {
+  fill: none;
+  stroke: #071327;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.spinning-logo__tube {
+  fill: none;
+  stroke: #fbe3a6;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.spinning-logo__head {
+  fill: #fbe3a6;
+  stroke: #071327;
+  stroke-width: 1.5;
+}
+
+.spinning-logo__pin {
+  fill: #071327;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spinning-logo--play .spinning-logo__disc {
+    animation: spinning-logo-turn 1.6s cubic-bezier(0.45, 0, 0.55, 1) 0.95s 1 both;
+  }
+
+  .spinning-logo--play .spinning-logo__arm-swing {
+    animation: spinning-logo-arm-swing 3.2s ease-in-out 1 both;
+  }
+}
+
+@keyframes spinning-logo-turn {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinning-logo-arm-swing {
+  0%,
+  12% {
+    transform: rotate(-25deg);
+  }
+  30%,
+  78% {
+    transform: rotate(0deg);
+  }
+  92%,
+  100% {
+    transform: rotate(-25deg);
+  }
 }

@@ -70,9 +70,9 @@ Total about 3:55 spoken at a calm pace; cut the optional lines (marked *optional
 **Do:** Point to the **"What do you want to hear?"** panel. Tick Temperature, Rain and one more (Fires or Lightning). Point at the counter ("3 tracks selected").
 
 **Say:**
-> "Each dataset plays its own instrument: temperature is piano chords, CO2 a contrabass, rain violins, snow a glockenspiel, lightning timpani, fires trombones, and night lights a synth pad."
+> "Eleven datasets, eleven instruments: temperature is piano chords, CO2 a contrabass, rain violins, snow a glockenspiel, lightning timpani, fires trombones, night lights a synth pad, sea ice bowed glass, vegetation a clarinet, carbon monoxide a bassoon and ocean plankton a vibraphone."
 >
-> "Rain, snow, lightning and fires only play when there is enough of them. Heavy rain makes the violins repeat faster, more lightning means more timpani strokes, and the trombones swell with the fires."
+> "Everything except temperature and CO2 only plays when it is there." Heavy rain makes the violins repeat faster, more lightning means more timpani strokes, and the trombones swell with the fires."
 
 ### Step 3 - Play (1:40, 35 s)
 
@@ -81,13 +81,15 @@ Total about 3:55 spoken at a calm pace; cut the optional lines (marked *optional
 **Say:**
 > "The server averages each dataset over your zone, month by month, and every month becomes one bar of music. Higher values play higher notes, measured against the zone's own range, so the same value always gives the same note."
 >
-> "On the globe the dots follow the music: the stronger the value, the more solid the dot. Where a dataset has no data for a date, its instrument simply stays silent."
+> "On the globe the dots follow the music: the stronger the value, the bigger the dot. Where a dataset has no data for a date, its instrument simply stays silent."
+>
+> "Listen to the tempo too: it follows the CO2 in the atmosphere, so the music speeds up as the decades go by."
 
 *Listen cue:* let the audience hear one full 30-second piece boundary; pieces play back to back without a gap.
 
 ### Step 4 - Travel in time (2:15, 20 s)
 
-**Do:** Drag the timeline (or press the arrow keys, Home or End) to jump. Click **"Go to a date"**, pick a year and month, press Go. Optional: click one of the **Key Climate Moments** cards (for example Paris Agreement) to jump there.
+**Do:** Drag the timeline (or press the arrow keys, Home or End) to jump. Click **"Go to a date"**, pick a year and month, press Go. Optional: press Play on one of the **Key events** cards under the globe (for example Black Summer 2019, or the 2015 super El Niño): it selects the zone and the dataset and starts just before the event.
 
 **Say:**
 > "Temperature goes back to 1880. Use the timeline, or go straight to any month. Jump to the 1950s, then to last year: you hear the piano climb."
@@ -112,9 +114,9 @@ Total about 3:55 spoken at a calm pace; cut the optional lines (marked *optional
 
 ## 4. UNDER THE HOOD (2:50 - 3:15)
 
-> "The app is React and TypeScript. The music is composed on the server: a Python service averages the NASA data over your zone, writes an orchestral score, and renders it to 30-second MP3 pieces, ten months each, that the browser plays back to back through the Web Audio API."
+> "The app is React and TypeScript. The music is composed on the server: a Python service averages the NASA data over your zone, writes an orchestral score, and renders it to 30-second MP3 pieces, about eight to thirteen months each as the tempo rises with the CO2, that the browser plays back to back through the Web Audio API."
 >
-> "Our data: NASA GISTEMP temperature anomalies since 1880, GPM IMERG rain and snow, MODIS fires, ISS LIS lightning, NASA SVS Earth at Night lights, and CO2. Everything runs with Docker Compose."
+> "Our data: NASA GISTEMP temperature anomalies since 1880, GPM IMERG rain and snow, MODIS fires, vegetation and ocean chlorophyll, MOPITT carbon monoxide, ISS LIS lightning, NASA SVS Earth at Night lights, the NSIDC sea ice index since 1979, and CO2. Everything runs with Docker Compose."
 
 ---
 
@@ -124,8 +126,8 @@ Total about 3:55 spoken at a calm pace; cut the optional lines (marked *optional
 >
 > "It is also a teaching tool: students can hear a warming trend in a minute."
 
-*Optional, only if the vinyl mode is demo-ready:*
-> "Next: a vinyl mode that plays one month across the whole globe, like a record, with the needle spiralling from the edge to the centre."
+*Optional:*
+> "There is also a vinyl mode: the globe becomes a record, and the needle travels across places, through time, or both. And if the orchestra is not your style, the same data plays as rain, fire and thunder, or as swing, funk or house."
 
 *Optional:*
 > "And more Earth Information Center datasets: the architecture is one instrument per dataset."
@@ -145,13 +147,13 @@ Total about 3:55 spoken at a calm pace; cut the optional lines (marked *optional
 Answers use only what the app does today. If you are unsure of a number, say so and point to the About page ("Data sources", "Under the hood").
 
 ### What NASA data do you use, and for what period?
-> "Six NASA-based datasets: GISTEMP temperature anomaly, monthly, 1880 to 2025, against the 1951-1980 baseline. GPM IMERG for rain and snow, June 2000 onwards. MODIS fires, July 2002 onwards (days of the month with a fire). ISS LIS lightning, March 2017 to July 2023. NASA SVS Earth at Night lights, one map per year, 2012 to 2023. CO2 monthly, September 2002 to March 2022, extracted by our team. Zone outlines are from Natural Earth."
+> "Eleven datasets, mostly NASA: GISTEMP temperature anomaly, monthly, 1880 to 2025, against the 1951-1980 baseline. GPM IMERG for rain and snow, June 2000 onwards. MODIS fires, July 2002 onwards (days of the month with a fire). ISS LIS lightning, March 2017 to July 2023. NASA SVS Earth at Night lights, one map per year, 2012 to 2023. CO2 monthly, September 2002 to March 2022, extracted by our team. NSIDC Sea Ice Index, 1979 onwards. MODIS Terra vegetation index from 2000 and MODIS Aqua ocean chlorophyll from 2002. MOPITT carbon monoxide on NASA Terra, 2000 to 2024. Zone outlines are from Natural Earth."
 
 ### Where does the audio come from? Do you synthesize it in the browser?
 > "No. The backend composes it: it averages each dataset over the selected points, writes a MIDI score and renders it to a 30-second MP3, base64 encoded. The browser decodes and schedules the pieces with the Web Audio API. The frontend only plays; it never makes up a note."
 
 ### How do you map data to sound?
-> "Value to pitch within a register per instrument, scaled on the whole series of that zone, so the same value is always the same note. One bar per month. For intermittent phenomena (rain, snow, lightning, fires, night lights) the amount also controls how present the instrument is: louder, denser rhythm, or swelling. Missing data means silence, never an invented value."
+> "Value to pitch within a register per instrument, scaled on the whole series of that zone, so the same value is always the same note. One bar per month. For intermittent phenomena (everything except temperature and CO2) the amount also controls how present the instrument is: louder, denser rhythm, or swelling. The tempo follows the global CO2 of each month, so the music speeds up over the decades. Missing data means silence, never an invented value."
 
 ### Is the mapping scientifically honest? Is a note comparable across zones?
 > "Within one zone, yes: the scale comes from that zone's own range. Between two zones the same note does not mean the same value; the app is a way to explore trends and patterns, not a measuring instrument. The exact values are always available in the data tables and the announcements."
@@ -175,7 +177,7 @@ Answers use only what the app does today. If you are unsure of a number, say so 
 > "All datasets are put on one 0.25 degree grid so a place has the same position in every dataset; the server then averages on 1 degree maps (2 degrees for temperature). Fine for continents, countries and seas; it is not meant for city-scale analysis."
 
 ### What are the limits today?
-> "Datasets end at different dates (lightning 2023, CO2 2022), so some instruments fall silent; two engine voices, dust and smoke, exist but no data is served for them yet; and it needs the server."
+> "Datasets end at different dates (lightning 2023, CO2 2022, carbon monoxide 2024), so some instruments fall silent; two engine voices, dust and smoke, exist but no data is served for them yet; and it needs the server."
 
 ### How did your team work?
 > "Six students from HEIG-VD in Switzerland: Magali Egger, Yasaman Izadmehr and Simon Walther on data processing, Teo Ferrari and Leo Zmoos on sonification, and Clarisse Estelle Fleurimont on frontend, DevOps and deployment. We used GitHub, Discord and Notion, and Claude agents to assist on specialised tasks."
@@ -192,5 +194,5 @@ Answers use only what the app does today. If you are unsure of a number, say so 
 - [ ] Backup recording ready, hook clip ready
 - [ ] Demo zone and three tracks chosen in advance (suggested: Temperature, Rain, Fires)
 - [ ] Rehearsed five times, timed to 3:30
-- [ ] Vinyl mode not shown unless finished and tested
+- [ ] Vinyl mode and music styles: shown only if time allows (optional line in section 5)
 - [ ] Questions outside the script: answer from the About page content

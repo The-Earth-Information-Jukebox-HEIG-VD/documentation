@@ -1,6 +1,6 @@
 # API Reference
 
-Complete REST API documentation for the Earth Information Jukebox backend (FastAPI, API version 2.6). The webapp built on it is **EarthChestra**, the Earth Information Jukebox project's app.
+Complete REST API documentation for the Earth Information Jukebox backend (FastAPI, API version 2.14). The webapp built on it is **EarthChestra**, the Earth Information Jukebox project's app.
 
 ---
 
@@ -13,7 +13,7 @@ Complete REST API documentation for the Earth Information Jukebox backend (FastA
 CORS is open by default (`JUKEBOX_CORS=*`, comma-separated list of origins). Every request and response is JSON, and errors have a `detail` message.
 
 !!! info "Two sets of endpoints"
-    The **deployed backend** (Docker image, `JUKEBOX_FULL_API=0`) serves only the webapp's calls: `GET /api/health`, `GET /api/instruments`, `POST /api/sonify`, `POST /api/zones/zone-data`, `POST /api/zones/series` and `POST /api/zones/groove` (`FRONTEND_PATHS` in `backend/app.py`). The contract of these six is `sonification/backend/FRONTEND_API.md`. The **engine endpoints** (`/api/options`, `/api/datasets`, `/api/sonify/debug`, `/api/compose`, `/api/compositions/{id}`, `/api/files/...`) are served when `JUKEBOX_FULL_API=1`, the default outside Docker.
+    The **deployed backend** (Docker image, `JUKEBOX_FULL_API=0`) serves only the webapp's calls: `GET /api/health`, `GET /api/instruments`, `GET /api/genres`, `POST /api/sonify`, `POST /api/zones/zone-data`, `POST /api/zones/series` and `POST /api/zones/groove` (`FRONTEND_PATHS` in `backend/app.py`). The contract of these seven is `sonification/backend/FRONTEND_API.md`. The **engine endpoints** (`/api/options`, `/api/datasets`, `/api/sonify/debug`, `/api/compose`, `/api/compositions/{id}`, `/api/files/...`) are served when `JUKEBOX_FULL_API=1`, the default outside Docker.
 
 ---
 
@@ -22,11 +22,30 @@ CORS is open by default (`JUKEBOX_CORS=*`, comma-separated list of origins). Eve
 | Method | Path | Deployed | Description |
 |--------|------|:---:|-------------|
 | GET | `/api/health` | yes | Status, `preparing_data`, audio capabilities |
-| GET | `/api/instruments` | yes | Which instrument plays which dataset |
+| GET | `/api/instruments` | yes | Which instrument plays which dataset (`?genre=` for another music style) |
+| GET | `/api/genres` | yes | The music styles, for a menu (v2.8) |
 | POST | `/api/sonify` | yes | Selected points + one time period in, 30 s of MP3 (base64) out |
 | POST | `/api/zones/zone-data` | yes | Same as `/api/sonify` with the webapp's field names; **the call the webapp uses** |
 | POST | `/api/zones/series` | yes | The whole monthly series of the selected area, no audio (the webapp's data graph) |
 | POST | `/api/zones/groove` | yes | Vinyl mode (v2.6): a path in space at one fixed date in, its music (MP3, base64) out |
+
+### Version history
+
+| Version | Change |
+|---|---|
+| 2.4 | `POST /api/zones/series` (chart data) |
+| 2.5 | `mask` instead of `points` |
+| 2.6 | `POST /api/zones/groove` (vinyl mode) |
+| 2.7 | `eras`: music through the ages (engine option) |
+| 2.8 | `genre` (8 genres + `realistic`), `GET /api/genres`, `GET /api/instruments?genre=` |
+| 2.9 | The temperature sets the tempo of each bar |
+| 2.10 | `duration_s` and `bar_starts_s` in zone-data; `genre` in groove |
+| 2.11 | Sea ice (`sea_ice`, bowed glass) |
+| 2.12 | `"step": "year"`: the same month, year after year |
+| 2.13 | The global CO2 sets the tempo by default (`tempo_source`); a 30 s chunk is about 8 to 13 months |
+| 2.14 | Vegetation (`vegetation`), carbon monoxide (`carbon_monoxide`), ocean plankton (`chlorophyll`) |
+
+The full changelog is in `sonification/backend/API.md`.
 | GET | `/api/options` | no | UI menu options |
 | GET | `/api/datasets` | no | Available datasets |
 | POST | `/api/sonify/debug` | no | `/api/sonify` with engine options and a detailed answer |
@@ -45,8 +64,8 @@ Check server status and capabilities.
 ```json
 {
   "status": "ok",
-  "version": "2.6",
-  "datasets": 7,
+  "version": "2.14",
+  "datasets": 11,
   "data_dir": "/app/data",
   "built_dir": "/app/cache/_datasets",
   "preparing_data": false,
@@ -54,7 +73,8 @@ Check server status and capabilities.
   "full_api": false,
   "audio_rendering": true,
   "mp3_encoding": true,
-  "orchestral_samples": false
+  "orchestral_samples": false,
+  "realistic_sounds": true
 }
 ```
 
@@ -70,12 +90,17 @@ Check server status and capabilities.
 | `audio_rendering` | bool | `tinysoundfont` is installed |
 | `mp3_encoding` | bool | `ffmpeg` is on the PATH |
 | `orchestral_samples` | bool | VSCO 2 CE samples are installed |
+| `realistic_sounds` | bool | The recordings of the `realistic` genre are installed (`python music/soundscape.py --download`, done in the Docker image) |
 
 ---
 
 ## GET `/api/instruments`
 
-Which instrument plays which dataset. No parameters. One entry per dataset the server has data for.
+Which instrument plays which dataset. One entry per dataset the server has data for.
+
+| Query parameter | Description |
+|---|---|
+| `genre` | Optional. A genre of `GET /api/genres` (aliases accepted, `400` if unknown): `instrument` and `by_dataset` then name the instrument (or sound) of each dataset in that genre, and the answer has `"genre"`. Without it the answer is unchanged (the orchestra) |
 
 ### Response
 
@@ -89,7 +114,11 @@ Which instrument plays which dataset. No parameters. One entry per dataset the s
     "snow": "Glockenspiel (melody)",
     "fires": "Trombones",
     "lightning": "Timpani",
-    "night_lights": "Synth pad"
+    "night_lights": "Synth pad",
+    "sea_ice": "Bowed glass (melody)",
+    "vegetation": "Clarinet (melody)",
+    "carbon_monoxide": "Bassoon",
+    "chlorophyll": "Vibraphone"
   },
   "instruments": [
     {
@@ -117,10 +146,48 @@ Which instrument plays which dataset. No parameters. One entry per dataset the s
 | `fires` | Trombones | days of the month with a fire | 2002-07 to 2026-11 |
 | `lightning` | Timpani | share of the area with lightning (0 to 1) | 2017-03 to 2023-07 |
 | `night_lights` | Synth pad | brightness (0 to 1) | 2012-01 to 2023-12, one value per year |
+| `sea_ice` | Bowed glass (melody) | % of the sea covered by ice | 1979-01 to 2026-10, no value in 1987-12 and 1988-01 |
+| `vegetation` | Clarinet (melody) | vegetation index (NDVI) | 2000-03 to 2026-10, land only |
+| `carbon_monoxide` | Bassoon | 10^18 molecules/cm² | 2000-04 to 2024-10, 20 months without value |
+| `chlorophyll` | Vibraphone | mg/m³ (played on a log scale) | 2002-07 to 2026-10, sea only |
 
-(The periods are those of the datasets in the Docker image; the response reports whatever the server has.) `dust` and `smoke` also exist as instruments (flute, French horns) but only appear when a dataset for them is present. `first_time_period` / `last_time_period` are `YYYY-MM`, or `YYYY-MM-DD` for daily data. `role` is the instrument's role: `harmony` (piano), `bass` (contrabass), `melody` (violins, glockenspiel), `swell` (trombones, synth pad); the lightning timpani report `percussion` (internally `timpani`, mapped by `ROLE_LABELS`).
+(The periods are those of the datasets in the Docker image; the response reports whatever the server has.) `dust` and `smoke` also exist as instruments (flute, French horns) but only appear when a dataset for them is present. `first_time_period` / `last_time_period` are `YYYY-MM`, or `YYYY-MM-DD` for daily data. `role` is the instrument's role: `harmony` (piano), `bass` (contrabass), `melody` (violins, glockenspiel, bowed glass, clarinet), `swell` (trombones, synth pad, bassoon), `rhythm` (vibraphone); the lightning timpani report `percussion` (internally `timpani`, mapped by `ROLE_LABELS`).
 
-`dataset_id` is what you send to `/api/sonify`. Aliases are also accepted: `co2_atmosphere` for `co2`, `fire` and `wildfires` for `fires`, `rain` for `precipitation`, `snowfall` for `snow`, `nightlights` for `night_lights` (`VARIABLE_ALIASES` in `backend/app.py`). The webapp builds its tracks from this list, so it shows exactly these seven.
+`dataset_id` is what you send to `/api/sonify`. Aliases are also accepted: `co2_atmosphere` for `co2`, `fire` and `wildfires` for `fires`, `rain` for `precipitation`, `snowfall` for `snow`, `nightlights` for `night_lights`, `ice` and `seaice` for `sea_ice`, `ndvi` for `vegetation`, `co` for `carbon_monoxide`, `plankton` for `chlorophyll` (`VARIABLE_ALIASES` in `backend/app.py`). The webapp builds its tracks from this list, so it shows exactly these eleven.
+
+`sea_ice` has no value on land: over an area it is the share of the sea that is frozen, and over land only it is `null` or 0 (the bowed glass stays silent). `vegetation` has no value over the sea and `chlorophyll` none over land.
+
+---
+
+## GET `/api/genres`
+
+The music styles, for a menu (API v2.8). No parameters.
+
+```json
+{
+  "default": "orchestra",
+  "genres": [
+    {"id": "orchestra", "name": "Orchestra", "bpm": 76,
+     "description": "The orchestra: piano chords, contrabass, violins, glockenspiel, timpani, trombones"},
+    {"id": "rocknroll", "name": "Rock'n'roll", "bpm": 150,
+     "description": "Electric guitar, electric bass, tenor sax, backbeat drums"}
+  ]
+}
+```
+
+| `id` | `name` | `bpm` |
+|---|---|---|
+| `orchestra` | Orchestra | 76 |
+| `ragtime` | Ragtime & early jazz | 96 |
+| `swing` | Swing & big band | 126 |
+| `rocknroll` | Rock'n'roll | 150 |
+| `funk` | Funk & disco | 112 |
+| `synthpop` | Synth-pop | 116 |
+| `house` | House & electronic | 124 |
+| `trap` | Modern pop & trap | 140 |
+| `realistic` | Realistic sounds | 76 |
+
+`bpm` is the genre's reference tempo; the tempo of each bar then follows the global CO2 (see [What to expect](#what-to-expect)). `realistic` has no instruments: each dataset is heard as the sound of what it is (rain, campfire, thunder, city traffic, street-lamp hum, singing ice, crickets, idling engines, bubbles), with a heartbeat at the CO2's tempo. Aliases are accepted wherever `genre` is: `jazz`, `rock`, `disco`, `electro`, `pop`, `classical`.
 
 ---
 
@@ -153,6 +220,9 @@ The webapp's call: selected points and one time period in, 30 seconds of music o
 | `mask` | string | No | The same area as a compressed bitmap, **instead of** `points` (v2.5, recommended for big zones; see [below](#mask-big-zones-in-a-few-kb)). If both are sent, `mask` is used |
 | `time_period` | string | No | Where the music starts: `"YYYY-MM"` (a year alone, `"1950"`, also works; `"YYYY-MM-DD"` for daily data) |
 | `aggregation` | string | No | `"mean"` (the only value, an area-weighted mean; anything else is a `422`) |
+| `genre` | string | No | A music style of `GET /api/genres` (v2.8; default `orchestra`, `400` if unknown). The answer then has `genre` |
+| `step` | string | No | `"month"` (default) or `"year"` (v2.12): one bar per year, always the month of `time_period` (`"2020-11"` plays November 2020, November 2021, ...). Monthly data only. The answer then has `"step": "year"` |
+| `eras` | bool | No | `true`: each bar takes the musical style of its date (v2.7; not with `genre`). The answer then has `era` and `eras` |
 
 *Without `points` or `mask`, `zone_id` must be a preset zone, otherwise `422`.
 
@@ -165,7 +235,7 @@ Unknown extra fields are ignored.
   "zone_id": "france",
   "dataset_id": "temperature",
   "time_period": "2024-03",
-  "next_time_period": "2025-01",
+  "next_time_period": "2025-03",
   "audio_data": "<base64 of an MP3 file>",
   "value": 1.42,
   "point_count": 2
@@ -184,12 +254,12 @@ Unknown extra fields are ignored.
 
 ### What to expect
 
-- **30 seconds is 10 months**: one bar of music per month. The next period after `2015-01` is `2015-11`, not `2015-02`: use `next_time_period`, do not add one month yourself. (With daily data, periods are days.)
+- **The CO2 sets the tempo** (v2.13, every genre): each bar (one month) is played at the tempo of the global CO2 of its date, the genre's tempo x0.8 in 1880 (290 ppm) to about x1.23 today. A chunk is still 30 seconds, so **30 seconds is about 8 months in 1880 and 12 to 13 months today**: use `next_time_period`, do not add months yourself. `/api/zones/zone-data` also gives `bar_starts_s`, the start second of each month. (With daily data, periods are days.)
 - **Several datasets**: each instrument plays where its own data exists and is silent elsewhere (for example, temperature and precipitation from 1999: the violins come in in June 2000). A variable with no data at all in the period is left out of the piece.
 - **Yearly data** (`night_lights`): the value is the year's. The synth pad starts clearly each January, when the value changes, then fades slowly over the year to a softer background note.
 - **The same value is the same note** in every chunk of the same area (the pitch scale is that of the whole series), so consecutive chunks connect.
 - A first request takes 2 to 5 seconds; the same request again is immediate (cached).
-- **Errors**: `400` unknown `dataset_id` (the message lists the available ones) or no data for these points and this period; `422` malformed request (no points, no mask and no preset zone, latitude out of range, another `aggregation`, an invalid `mask`); `503` audio rendering is unavailable on the server (see `GET /api/health`).
+- **Errors**: `400` unknown `dataset_id` (the message lists the available ones), unknown `genre`, `step: "year"` on data that is not monthly, `eras` with `genre`, or no data for these points and this period; `422` malformed request (no points, no mask and no preset zone, latitude out of range, another `aggregation`, an invalid `mask`); `503` audio rendering is unavailable on the server (see `GET /api/health`).
 
 ### Playing the Audio
 
@@ -232,9 +302,13 @@ source.start();
   "next_time_period": "2015-11",
   "audio_data": "<base64 of an MP3 file>",
   "values": {"temperature": 1.42, "night_lights": 0.031},
-  "point_count": 2
+  "point_count": 2,
+  "duration_s": 30.0,
+  "bar_starts_s": [0.0, 2.774, 6.006, 8.918, 11.885, 14.966, 17.964, 20.6, 23.237, 26.658]
 }
 ```
+
+The request takes the same optional `mask`, `genre`, `step` and `eras` as `/api/sonify`. `duration_s` is the exact length of the audio (v2.10); `bar_starts_s[i]` is the second month `i` starts (the first is `0`, the bars are not all the same length since the tempo follows the CO2), and its length is the number of months up to `next_time_period`. Time what the listener hears with it instead of assuming 3 s per month. With `step: "year"` bar `i` is year `time_period + i`.
 
 A dataset the server has no data for is left out of the piece, not an error, as long as at least one remains (`400` otherwise); `dataset_ids` in the answer says which ones were combined. `values` has an entry for each dataset that has data at `time_period`. With `mask`, `point_count` is the number of 0.1° cells it selects.
 
@@ -298,7 +372,7 @@ The whole monthly series of the selected area, for a chart (API v2.4; `mask` sin
 
 ## POST `/api/zones/groove`
 
-Vinyl mode (API v2.6): the date stays fixed, what moves is the place. The frontend sends the stretch of path the needle crosses next, the backend answers with its music. Bars are 3 s, as in `/api/zones/zone-data`; with `points_per_bar: 4` every point is one beat (0.75 s), so **a 30 s chunk is 40 points**. The music comes from `music/groove.py` in the sonification repository.
+Vinyl mode (API v2.6): the date stays fixed, what moves is the place. The frontend sends the stretch of path the needle crosses next, the backend answers with its music. Bars are a fixed 3 s in every genre (unlike `/api/zones/zone-data`, whose bars follow the CO2 tempo); with `points_per_bar: 4` every point is one beat (0.75 s), so **a 30 s chunk is 40 points**. The music comes from `music/groove.py` in the sonification repository.
 
 ### Request
 
@@ -326,6 +400,7 @@ const path = Array.from({ length: 40 }, (_, i) => ({ lat: -0.5, lng: i * 9 }));
 | `radius_deg` | float | No | How wide the needle reads, from 0.1 to 10 (default 1.5): each point is the mean over a disc of that radius. Wide = smooth music, narrow = detailed and jumpy |
 | `dataset_ids` | array | No | As for zone-data; omitted = every dataset |
 | `zone_id` | string | No | The frontend's id of this stretch or record, echoed back |
+| `genre` | string | No | A music style of `GET /api/genres` (v2.10, `400` if unknown), echoed back. The tempo stays the fixed 3 s bar in every genre |
 
 ### Response
 
@@ -490,7 +565,13 @@ The response has the seven `/api/sonify` fields plus: `zone_name`, `audio_format
 | `palette` | string | `"orchestra"` | `"orchestra"`, `"auto"` (regional instruments for the zone) or a palette id |
 | `key` | string | `"C"` | Tonic: `C`, `C#`, `D`, `Eb`, ... |
 | `scale` | string | null | `major`, `minor`, `dorian`, `lydian` or `harmonic_minor`. Null = major (or the palette's mode) |
-| `bpm` | number | 76 | Tempo, 30 to 200 |
+| `bpm` | number | genre's | Tempo, 30 to 200. Default: the genre's reference tempo (76 for the orchestra and `realistic`) |
+| `genre` | string | `"orchestra"` | A genre of `GET /api/genres` (data style only; not with `eras`) |
+| `eras` | bool | false | Each bar in the style of its date (data style only) |
+| `tempo_from_temperature` | bool | true | Each bar has its own tempo, set by `tempo_source` (the name is kept for compatibility); `false` = one fixed tempo |
+| `tempo_source` | string | `"co2"` | `"co2"`: the global CO2 of the bar's dates (v2.13). `"temperature"`: the bar's temperature on the area's 5th..95th percentile, x0.75 to x1.25 (v2.9) |
+| `temperature_sound` | string | `"heartbeat"` | `realistic` with `tempo_source: "temperature"`: `"heartbeat"` or `"clock"` |
+| `step` | string | `"month"` | `"year"`: the same month of successive years, one bar each |
 | `frames_per_bar` | number | auto | Data frames per bar (default: daily data 7, monthly 1; 12 makes one bar a year) |
 | `mapping` | string | `"hybrid"` | `"hybrid"`, `"relative"` or `"absolute"` |
 | `pitch_range` | string | `"window"` | `"window"`: lowest/highest note = lowest/highest value of this piece. `"series"`: of the whole series of the area (`/api/sonify` uses this) |
@@ -552,6 +633,7 @@ The response has the seven `/api/sonify` fields plus: `zone_name`, `audio_format
     "total_beats": 40,
     "duration_s": 31.58,
     "tempo_map": [{"beat": 0.0, "bpm": 76}],
+    "tempo_source": "co2",
     "time_start": "2024-06-15T00:00:00Z",
     "time_end": "2025-03-15T00:00:00Z",
     "time_last_frame": "2025-03-15T00:00:00Z",
@@ -610,6 +692,7 @@ The response has the seven `/api/sonify` fields plus: `zone_name`, `audio_format
 - `score.time_last_frame` is the date of the last frame played; `score.time_end` is the start of the last bar.
 - `request.datasets` is `{variable: dataset}` when several datasets were merged.
 - The rendered audio is about 1.7 s longer than `duration_s` (the hall reverb rings out).
+- `score.genre` names the genre; `score.tempo_map` has one entry per tempo change, `score.tempo_range` the slowest and fastest, `score.tempo_source` (`co2`, `temperature` or null) what set them, and `score.co2` gives `co2_ppm_per_bar` and `urgency_per_bar` (0..1). With `eras`, `score.eras` lists the eras and `bars[i].era` names each bar's.
 
 **Timing:** first request about 2 to 3 s with MP3 (5 to 10 s with orchestral samples), about 0.5 s without audio. The same request again is served from cache in about 10 ms.
 
@@ -709,8 +792,10 @@ Invalid input (bad zone, malformed `cells` or `bbox`, `aggregation` other than `
 # Health check
 curl http://localhost:8000/api/health
 
-# Instruments and their data
+# Instruments and their data, and the music styles
 curl http://localhost:8000/api/instruments
+curl 'http://localhost:8000/api/instruments?genre=realistic'
+curl http://localhost:8000/api/genres
 
 # Sonification of a point, starting in March 2024
 curl -X POST http://localhost:8000/api/sonify \

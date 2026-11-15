@@ -19,6 +19,10 @@ Open the deployed instance, or run it locally (see the [Quick Start](../getting-
     Modern browsers require a user interaction (click/tap/key press) before audio can play.
     Audio starts when you press the Play button (or Space), which satisfies this rule.
 
+### How to Use Page
+
+For a short guided tour of every control (quick start, reading the music, exploring in time, key events, the two ways to listen, keyboard shortcuts), open **How to use** in the header.
+
 ### Language
 
 Use the language selector in the header to switch between English, French and German. The initial language follows your browser.
@@ -35,7 +39,7 @@ The globe always sits on a dark "space" background, even in the light theme, so 
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  EarthChestra              Home  About  [☾ Dark] [Language]  │
+│  EarthChestra   Home  How to use  About  [☾ Dark] [Language] │
 ├──────────────────────────────────────────────────────────────┤
 │  [Time travel | Vinyl]  [Globe | List]  [Continents | ...]   │
 │  ┌────────────────┐ ┌──────────────────────────────────────┐ │
@@ -44,17 +48,17 @@ The globe always sits on a dark "space" background, even in the light theme, so 
 │  │ [x] Temperature│ │   Click a zone to select it          │ │
 │  │ [ ] Rain  ...  │ │                                      │ │
 │  └────────────────┘ └──────────────────────────────────────┘ │
-│  Key Climate Moments:  [1880] [1934] ...  (jump to a moment)  │
+│  Key events:  [El Niño 2015–16] [Black Summer] ...  (cards)   │
 ├──────────────────────────────────────────────────────────────┤
 │  (data graph, when Graph is on)                               │
-│  [⏮] [▶] [⏭] [Mar 1998] 1880 ───●───── 2025 🔊━━ [Graph] [Sounds 1]│
+│  [⏮] [▶] [⏭] [Mar 1998] [Months] 1880 ──●── 2025 🔊 [Graph] [Sounds]│
 └──────────────────────────────────────────────────────────────┘
 ```
 
-The player bar stays at the bottom of every page (including About), so audio can always be paused.
+The player bar stays at the bottom of every page (including How to use and About), so audio can always be paused.
 
 !!! note "Time travel and Vinyl"
-    The **Time travel / Vinyl** switch at the top chooses the experience. This guide describes **Time travel** (one zone, the music travels through the years), the finished mode. **Vinyl** (one month played across the globe like a record) is still in development: see [Frontend: vinyl experience mode](../development/frontend.md#in-development-vinyl-experience-mode).
+    The **Time travel / Vinyl** switch at the top chooses the experience. Most of this guide describes **Time travel** (one zone, the music travels through the years). **Vinyl** (the globe becomes a record) is described in [Vinyl Mode](#vinyl-mode) below.
 
 ---
 
@@ -76,14 +80,14 @@ For each track the panel shows:
 
 - the dataset name and the **instrument** that plays it
 - the **period** covered ("From 1880 to 2025")
-- "only when present" for instruments that are silent when their phenomenon is absent (rain, snow, lightning, fires, night lights)
+- "only when present" for instruments that are silent when their phenomenon is absent (every track except temperature and CO2, which always play)
 - tracks the server has no data for are greyed out and marked "Not available on the server"
 
 The track list comes from the server, so it can change as new data is added. Temperature is on by default. At least one track must be on to play; with none, the player shows a **Choose sounds** link that opens the panel.
 
 ### Choose the Music Style
 
-The **Music style** menu above the sounds list chooses how the data is played. **Orchestra** (the default) and **Realistic sounds** (the sound of each phenomenon: rain, fire, thunder, a heartbeat for the temperature) are grouped as **Recommended** (hover the (i) next to the label to read why): they are the styles we worked on most, and they carry the climate message most clearly. The other styles (ragtime, swing, rock'n'roll, funk, synth-pop, house, trap) are under **Just for fun**: the same data, in another genre, to play with.
+The **Music style** menu above the sounds list chooses how the data is played. **Orchestra** (the default) and **Realistic sounds** (the sound of each phenomenon: rain, fire, thunder, a heartbeat for the temperature) are grouped as **Recommended** (hover or focus the (i) next to the label to read why): they are the styles we worked on most, and they carry the climate message most clearly. The other styles (ragtime, swing, rock'n'roll, funk, synth-pop, house, trap) are under **Just for fun**: the same data, in another genre, to play with. The style list comes from the server (`GET /api/genres`), and the instrument names in the sounds panel follow the chosen style.
 
 ### Choose the Time
 
@@ -91,7 +95,7 @@ There is no duration field. The timeline always spans the period covered by the 
 
 - click or drag the **timeline** to jump to a year
 - press the **date** shown left of the timeline (for example "Mar 1998") to open **Go to a date**: choose a year and a month, then **Go** (months after the last data month are disabled; **Close** or Escape closes it without moving)
-- use the **Key Climate Moments** cards to jump to a historical event
+- use the **Key events** cards under the globe to play a historical event (see below)
 - playback starts from the beginning (or from where you seeked) and plays through the years, 30 seconds of music at a time
 
 ---
@@ -113,6 +117,12 @@ There is no duration field. The timeline always spans the period covered by the 
 There is no Stop button: pause, then seek to the start (Home) to begin again. There is also no per-track volume, because the server mixes all tracks into a single audio stream.
 
 When you press Play, the globe zooms to your zone and draws the **real dataset values** behind the sound as coloured spots (bigger where the value is higher; below-normal temperature is a ring), growing and shrinking month by month in step with the music. A legend lists the datasets with their value ranges, and a table with the same values is available to screen readers. Use **Change zone** (or Escape) to go back to zone selection; this pauses playback.
+
+### Key Events
+
+Under the globe, 15 **Key events** cards link the data to real events: three El Niño episodes (2009–10, 2015–16, 2023–24), wildfires (Indonesia 2015, Black Summer 2019–20, California 2020, Yakutia 2021, Quebec 2023), floods and storms (Hurricane Harvey 2017, Pakistan 2022, Storm Daniel 2023, UAE and Oman 2024), snowstorms (Filomena and Uri, 2021) and the Hunga Tonga eruption (2022). With a zone selected, only that zone's events are shown.
+
+Each card gives the dataset you will hear, the zone, the months when the event shows in the data, and when it really happened; photos have alt text. Pressing **Play** on a card selects the zone if needed, keeps only the event's dataset on, and moves the timeline to a month before the event, so you hear it arrive. "Playing now" appears on the card while the music is inside the event's dates.
 
 ### One Month Through the Years
 
@@ -138,6 +148,8 @@ If audio takes a moment to load you see "Loading audio for 1950…". If the serv
 | `M` | Mute / Unmute |
 | `Esc` | Leave the playback view of the globe (back to zone selection), or close **Go to a date** |
 
+In vinyl mode, `←` / `→` go to the previous or next groove, and `Home` / `End` to the first or last.
+
 When the **timeline** is focused it also accepts `Shift` + `←` / `→` (one month back / forward; one year with a single month chosen in **Months**) and `Page Down` / `Page Up` (one year back / forward). When the volume slider is focused, the arrow keys change the volume. Shortcuts are ignored while you type in a field or while a dialog is open.
 
 !!! note
@@ -151,10 +163,12 @@ When the **timeline** is focused it also accepts `Shift` + `←` / `→` (one mo
 
 The music represents climate data for the zone you selected:
 
-- **Higher pitch** = higher value (for temperature: warmer than the 1951-1980 average)
-- **Lower pitch** = lower value (cooler)
+- **Higher pitch** = higher value, compared with your zone's own range (for temperature: warmer than the 1951-1980 average)
+- **Louder** = more of it
+- **Faster** = later in time: the tempo of each month follows the global CO2 concentration of that month, so the music speeds up over the decades (in vinyl Space and Both, the tempo stays steady)
 - **Different instruments** = different climate variables
-- Some instruments only sound while their phenomenon is present (for example rain or lightning)
+- **Silence** = no data, or the phenomenon is absent (for example no rain, no lightning, no sea ice)
+- Temperature (piano) and CO2 (contrabass) always play when they have data
 
 The exact mapping is computed by the server; see the [sonification documentation](../development/sonification.md).
 
@@ -171,8 +185,30 @@ The instrument for each track is shown in the track panel. The server currently 
 | Timpani | Lightning (thunder: more flashes, more hits) |
 | Trombones | Fires, swelling and holding below the piano |
 | Synth pad | Night lights (one value per year, fading through the year) |
+| Bowed glass (melody) | Sea ice (share of the sea that is frozen; silent over land and warm seas) |
+| Clarinet (melody) | Vegetation (NDVI; land only, silent over deserts) |
+| Bassoon | Carbon monoxide (pollution above the clean background) |
+| Vibraphone | Ocean plankton (chlorophyll, on a log scale; sea only) |
 
-Which of these are available depends on the data loaded on the server, and each has its own period (for example CO2 2002 to 2022, fires 2002 to 2026, lightning 2017 to 2023).
+Which of these are available depends on the data loaded on the server, and each has its own period (for example sea ice 1979 to 2026, CO2 2002 to 2022, fires 2002 to 2026, lightning 2017 to 2023). With another music style, the instrument names change, and in **Realistic sounds** each dataset is heard as the sound of what it is (rain, campfire, thunder, city traffic, the hum of street lamps, wind for snow, singing ice, crickets for vegetation, idling engines for carbon monoxide, bubbles for plankton).
+
+---
+
+## Vinyl Mode
+
+Choose **Vinyl** in the **Time travel / Vinyl** switch. The globe becomes a record: the needle plays it from the edge to the centre, ten grooves of 30 seconds each.
+
+1. Choose the **centre of the record**: one of 11 places (North Pole, South Pole, the continents and the three oceans), a custom latitude and longitude, or a click on the globe.
+2. Choose how **the needle travels**:
+    - **Space**: one date; the needle spirals across places, from the edge to the centre.
+    - **Time**: one place; the needle stays on the centre while the months go by.
+    - **Both**: the needle crosses places and the date moves on with each groove, by **one month** or **one year** per groove.
+3. Choose the **month to play** (or the starting month), within the period of the selected sounds.
+4. Press **Play the record**.
+
+The sounds panel and the music style work as in Time travel. Changing the month, the centre, the way the needle travels or the music style starts the record again from the edge. In Space and Both, pitch is compared with the dataset's range worldwide, so places can be compared with each other.
+
+The record view, the globe and a table of grooves (start, end, region crossed, date and values) show where the needle is; the current groove and its reading are announced to screen readers.
 
 ---
 
@@ -186,7 +222,7 @@ Which of these are available depends on the data loaded on the server, and each 
 
 ## Audio Transcript, Download and Settings
 
-The following features of earlier versions are **not available** in the current app: audio transcript panel, audio download (MP3/WAV/MIDI), settings dialog (tempo, key, scale, style, audio engine), info panel and `?` help.
+The following features of earlier versions are **not available** in the current app: audio transcript panel, audio download (MP3/WAV/MIDI), settings dialog (tempo, key, scale, audio engine), info panel and `?` help.
 
 For a text alternative to the globe, use the **List View**; during playback, the globe's data table and the announced readings give the values in text form. The app respects your system's **reduced motion** preference.
 
@@ -207,7 +243,8 @@ For a text alternative to the globe, use the **List View**; during playback, the
 
 - Compare different zones to hear geographic differences
 - Turn several tracks on to hear how variables interact
-- Use the Key Climate Moments to jump to notable years
+- Use the Key events cards to hear notable events
+- Use **Months** to hear one month year after year, so the seasons step aside
 
 ### Accessibility
 

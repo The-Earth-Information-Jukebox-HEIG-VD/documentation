@@ -10,12 +10,13 @@ Deploy EarthChestra (the Earth Information Jukebox project's app) using Docker C
 - Docker with the Compose v2 plugin (`docker compose`, not `docker-compose`)
 - The sibling repositories checked out next to `deployment/` (for the local build, see below)
 - About 2 GB RAM for the backend (the production override caps it at 2 GB)
-- Disk space: the raw datasets are ~6.3 GB (`datasets/data`), the backend image ~1 GB, plus the converted datasets in the cache volume
+- Disk space: the raw datasets are ~9.1 GB (`datasets/data`, `du -sh`), the backend image ~1 GB, plus the converted datasets in the cache volume
 
 !!! info "Published images"
     `docker-compose.yml` pulls `ghcr.io/the-earth-information-jukebox-heig-vd/{datasets,sonification,webapp}`, each at its own version (`DATASETS_VERSION`, `SONIFICATION_VERSION`, `WEBAPP_VERSION`; default `latest`).
     Images are published by the `v*` tag workflows (see [CI/CD](ci-cd.md#releasing-images)); the latest release is
-    `v1.1.0` in all three repositories, pulled as `1.1.0` (the version variables take the Git tag **without** the `v`).
+    `v1.3.0` in `webapp` and `datasets` and `v1.3.2` in `sonification`, pulled as `1.3.0` / `1.3.2` (the version
+    variables take the Git tag **without** the `v`).
     The repositories are private, so run `docker login ghcr.io` first. To run from the sibling checkouts instead,
     use the **local build** below.
 
@@ -109,7 +110,7 @@ services:
 - `data-init` is moved to the `registry` profile, so it does not run (the data comes from the bind mount).
 - `backend` is built from `../sonification` as `earth-jukebox/sonification:local`; `webapp` from `../webapp`
   as `earth-jukebox/webapp:local` with `VITE_API_URL=/api`.
-- Both mount `../datasets/data` read-only (`/app/data` and `/usr/share/nginx/data`) instead of copying ~6 GB into a volume.
+- Both mount `../datasets/data` read-only (`/app/data` and `/usr/share/nginx/data`) instead of copying ~9 GB into a volume.
 - The backend health check gets a 60 s `start_period` for the first data conversion.
 
 To also bundle the VSCO orchestral samples (~440 MB, slower build), uncomment the `WITH_VSCO: "1"` build arg in
@@ -133,7 +134,8 @@ browser ──:80──▶ webapp (nginx)
 backend (FastAPI, python backend/serve.py)
   ├── reads the raw datasets from /app/data (read-only)
   ├── converts them in the background into /app/cache/_datasets
-  └── serves /api/health, /api/instruments, /api/sonify, /api/zones/zone-data, /api/zones/series, /api/zones/groove
+  └── serves /api/health, /api/instruments, /api/genres, /api/sonify, /api/zones/zone-data,
+      /api/zones/series, /api/zones/groove
 ```
 
 - **webapp image** (`webapp/Dockerfile`): `node:22-alpine` build stage (`npm ci && npm run build`, build arg
@@ -204,7 +206,7 @@ Set in `sonification/Dockerfile` (and partly by compose):
 | `JUKEBOX_CORS` | `*` | Allowed CORS origins |
 | `JUKEBOX_PREPARE` | `1` | `0` skips the raw-data conversion at start-up |
 | `JUKEBOX_MERGE_DATASETS` | `1` | Each variable is read from its own dataset, lined up by date |
-| `JUKEBOX_FULL_API` | `0` | `0`: only `/api/health`, `/api/instruments`, `/api/sonify`, `/api/zones/zone-data`, `/api/zones/series`, `/api/zones/groove`; `1`: also the engine endpoints (`/api/compose`, `/api/datasets`, `/api/options`, …) |
+| `JUKEBOX_FULL_API` | `0` | `0`: only `/api/health`, `/api/instruments`, `/api/genres`, `/api/sonify`, `/api/zones/zone-data`, `/api/zones/series`, `/api/zones/groove`; `1`: also the engine endpoints (`/api/compose`, `/api/datasets`, `/api/options`, …) |
 | `JUKEBOX_CHUNK_SECONDS` | `30` | Length of one `/api/sonify` chunk |
 | `PORT` | `8000` | Port uvicorn listens on inside the container |
 
@@ -237,7 +239,7 @@ docker volume rm jukebox-data
 docker compose up -d          # data-init copies again
 
 # or pre-populate / refresh it by hand (pulls the datasets image, writes the same fingerprint)
-./scripts/init-data.sh        # optional version: ./scripts/init-data.sh 1.1.0 (Git tag without the "v")
+./scripts/init-data.sh        # optional version: ./scripts/init-data.sh 1.3.0 (Git tag without the "v")
 ```
 
 ### Data from a host folder
@@ -297,7 +299,7 @@ docker stats
 
 `denied` from `ghcr.io`: the repositories are private, so run `docker login ghcr.io` with a token that has
 `read:packages`. `manifest unknown`: the version in `.env` was never published; use a released one (for example
-`1.1.0`, without `v`) or `./scripts/run-local.sh`.
+`1.3.0`, without `v`) or `./scripts/run-local.sh`.
 
 ### Container won't start
 
@@ -343,7 +345,7 @@ git -C ../webapp pull && git -C ../sonification pull && git -C ../datasets pull
 ### Registry images
 
 ```bash
-# bump WEBAPP_VERSION / SONIFICATION_VERSION / DATASETS_VERSION in .env (e.g. 1.1.0)
+# bump WEBAPP_VERSION / SONIFICATION_VERSION / DATASETS_VERSION in .env (e.g. 1.3.0)
 docker compose pull
 docker compose up -d          # data-init refreshes jukebox-data if the datasets changed
 ```

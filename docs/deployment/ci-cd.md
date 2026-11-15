@@ -28,8 +28,9 @@ push main (documentation) ──▶ deploy-pages.yml ──▶ GitHub Pages
 ```
 
 !!! info "Current state"
-    Releases are tagged: `v1.0.0` and `v1.1.0` exist in `webapp`, `sonification` and `datasets` (plus `v1.0.1` in
-    `webapp`), so their images are on GHCR, the latest as `1.1.0`. The `fb-docker-support` branches named in the
+    Releases are tagged: the latest are `v1.3.0` in `webapp` and `datasets` and `v1.3.2` in `sonification` (earlier:
+    `v1.0.0`, `v1.1.0`, `v1.2.0` in all three, plus `v1.0.1` in `webapp` and `v1.3.1` in `sonification`), so their
+    images are on GHCR. The `fb-docker-support` branches named in the
     webapp and sonification triggers no longer exist, so in practice only tags publish.
 
 ---
@@ -92,7 +93,7 @@ Differences between the three:
 
 - **webapp**: build arg `VITE_API_URL=/api`, GitHub Actions layer cache, branch tag.
 - **sonification**: GitHub Actions layer cache, branch tag; builds without `WITH_VSCO` (SoundFont only, no orchestral samples).
-- **datasets**: tag-only trigger, always tags `latest`, no layer cache, and two extra steps because `data/` is ~6.3 GB:
+- **datasets**: tag-only trigger, always tags `latest`, no layer cache, and two extra steps because `data/` is ~9.1 GB:
   a **Free disk space** step before the checkout (removes preinstalled SDKs the image never uses, prunes Docker images,
   drops the swap file: ~25 GB freed) and, after a plain `actions/checkout@v4` (no LFS: the data is plain Git), a
   **Remove git metadata** step (`rm -rf .git`, a ~1.3 GB pack that `.dockerignore` excludes anyway).
@@ -108,16 +109,16 @@ Push a semver tag in **each** repository whose image you want to publish:
 
 ```bash
 # in webapp/, sonification/ and datasets/
-git tag v1.2.0
-git push origin v1.2.0
+git tag v1.4.0
+git push origin v1.4.0
 ```
 
-Each push produces `:1.2.0`, `:1.2` and `:latest` (the version variables in `.env` take the tag without the `v`, e.g. `1.2.0`). Then, on the server, set `WEBAPP_VERSION`, `SONIFICATION_VERSION` and
+Each push produces `:1.4.0`, `:1.4` and `:latest` (the version variables in `.env` take the tag without the `v`, e.g. `1.4.0`). Then, on the server, set `WEBAPP_VERSION`, `SONIFICATION_VERSION` and
 `DATASETS_VERSION` in `deployment/.env` and pull (see [Production](production.md#updating)). Each image has its own
 version, so the webapp, the backend and the data can be released independently.
 
 !!! note
-    The `datasets` image contains all of `datasets/data` (~6.3 GB at the moment); expect a long build and push.
+    The `datasets` image contains all of `datasets/data` (~9.1 GB at the moment); expect a long build and push.
     Packages created from private repositories are private: deployment hosts need `docker login ghcr.io`.
 
 Watch the runs:

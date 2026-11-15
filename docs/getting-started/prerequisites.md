@@ -158,8 +158,8 @@ The backend encodes the audio chunks to MP3 with `ffmpeg`; without it on the `PA
 
 ### Disk Space
 
-The `datasets` repository holds ~6.3 GB of monthly maps (`datasets/data`), and the backend writes the converted
-datasets to its cache. Plan for at least 10 GB free; the Docker images add ~1 GB.
+The `datasets` repository holds ~9.1 GB of monthly maps (`datasets/data`), and the backend writes the converted
+datasets to its cache. Plan for at least 12 GB free; the Docker images add ~1 GB.
 
 ---
 

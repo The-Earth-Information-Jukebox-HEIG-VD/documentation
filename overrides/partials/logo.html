@@ -1,0 +1,18 @@
+{#-
+  EarthChestra logo with its tonearm, same drawing as the webapp's
+  SpinningLogo (webapp/src/components/layout/SpinningLogo.tsx).
+  Decorative: the surrounding header link is named by aria-label (site name).
+  The swing plays once per visit (javascripts/logo.js), never with reduced motion.
+-#}
+<span class="spinning-logo">
+  <img class="spinning-logo__disc" src="{{ config.theme.logo | url }}" alt="">
+  <svg class="spinning-logo__arm" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+    <g class="spinning-logo__arm-swing">
+      <path d="M94 6 L86 56 L77 70" class="spinning-logo__tube-outline"/>
+      <path d="M94 6 L86 56 L77 70" class="spinning-logo__tube"/>
+      <rect x="71" y="64" width="12" height="9" rx="2" transform="rotate(33 77 68.5)" class="spinning-logo__head"/>
+      <circle cx="94" cy="6" r="7" class="spinning-logo__head"/>
+      <circle cx="94" cy="6" r="2.5" class="spinning-logo__pin"/>
+    </g>
+  </svg>
+</span>

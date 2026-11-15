@@ -100,7 +100,7 @@ Navigate by landmark using your screen reader:
 
 ## Audio Transcript
 
-There is no separate audio transcript yet (no "Audio Transcript" button, no `T` shortcut). The text alternatives are the live announcements of the current value, the hidden data tables of the globe and the graph, and the About page, which explains how data maps to sound.
+There is no separate audio transcript yet (no "Audio Transcript" button, no `T` shortcut). The text alternatives are the live announcements of the current value, the hidden data tables of the globe and the graph, the **How to use** page (a step-by-step guide to every control and to reading the music) and the About page, which explains how data maps to sound.
 
 ---
 
@@ -130,7 +130,7 @@ A **high contrast** theme (black background, white text, 2px borders) and a **co
 - Track availability and "only when present" are shown as text
 - Warm / cool markers (▲ / ▼) are available in color-blind mode
 
-The eight track colors come in **two palettes**, one for dark backgrounds (globe, legend, dark theme) and one for light backgrounds (track panel and data graph in the light theme). Each light color is a darker shade of the same hue, so an instrument keeps its identity across themes. Both palettes were checked with a color-vision simulator (protanopia, deuteranopia) comparing every pair of tracks, not only neighbours, and every color reaches 3:1 against its background:
+The eleven track colors come in **two palettes**, one for dark backgrounds (globe, legend, dark theme) and one for light backgrounds (track panel and data graph in the light theme). Each light color is a darker shade of the same hue, so an instrument keeps its identity across themes. Both palettes were checked with a color-vision simulator (protanopia, deuteranopia) comparing every pair of tracks, not only neighbours, and every color reaches 3:1 against its background:
 
 | Track | Dark background | Light background |
 |-------|-----------------|------------------|
@@ -142,9 +142,15 @@ The eight track colors come in **two palettes**, one for dark backgrounds (globe
 | Night lights | `#38b484` | `#027652` |
 | Fires | `#da154c` | `#d51952` |
 | Sea ice | `#f7f4ee` (ice white) | `#8f75f1` |
+| Vegetation (NDVI) | `#7ee484` | `#287d00` |
+| Ocean chlorophyll | `#007e66` | `#00967d` |
+| Carbon monoxide | `#d20cfc` | `#8a0078` |
 
 !!! note
     Sea ice on dark backgrounds (`#f7f4ee`, ice white) is the one exception still under review: the validator places it close to snow for people with protanopia. The track name next to each dot and the line's own dash pattern in the graph keep the two apart.
+
+!!! note
+    Eleven colors at 3:1 on a white page leave little room in the greens. On light backgrounds, vegetation (`#287d00`) sits close to night lights (`#027652`) and ocean chlorophyll (`#00967d`) close to snow (`#1096b5`); under deuteranopia chlorophyll is closest to fires. These pairs are told apart by the track name next to each dot and by each graph line's own dash pattern. On dark backgrounds (globe, dark theme) the three new colors stay well apart from every other track, including for color-blind viewers.
 
 Color is still never the only cue: track names are always written next to their dot or line.
 
@@ -174,6 +180,8 @@ Animations are switched off when the system setting `prefers-reduced-motion: red
   scroll-behavior: auto !important;
 }
 ```
+
+The animated logo follows the same rule. In the header and on the About page (and on the loading screen), the vinyl-Earth logo plays a short animation once: a gramophone tonearm swings onto the record, the record turns once, then the arm swings back (about 3 seconds, never repeated or looped, so it stays well under the 5-second limit of WCAG 2.2.2). With `prefers-reduced-motion: reduce` (or the app's reduced motion preference) nothing moves: the logo is shown still, with the arm at rest. The logo is decorative (`alt=""`, the tonearm drawing is `aria-hidden`); the link or heading around it gives its name. The documentation site's header uses the same animated arm and the same reduced-motion rule.
 
 To enable:
 - **macOS**: System Settings → Accessibility → Display → Reduce motion
@@ -234,7 +242,7 @@ The globe canvas has a text description (`role="img"` with a label), and the ove
 
 During playback the globe also has a visually hidden table (caption with the zone and month) of the values it draws.
 
-### Vinyl Mode (in development)
+### Vinyl Mode
 
 In **Vinyl** mode the player bar has the same Play / Pause and Sounds buttons; the shortcuts above apply, but `←` / `→` move to the previous / next groove and `Home` / `End` to the first / last. The groove slider is a native range input with a label ("Groove k of n") and a spoken value (groove, elapsed and total time, plus the date when the date moves). The record image is `role="img"` with a label (centre and month), and a visually hidden table with a caption lists the values of the playing chunk. `Escape` has no function in this mode.
 
@@ -255,6 +263,14 @@ Arrow keys on the radios change the radio, not the groove (global shortcuts igno
 The real date is available as text in several places: the player bar ("Date: April 2020"), the caption on the globe, the slider's spoken value, a **Date** column in the hidden table (a range such as "March 2020 to November 2020" when a groove covers several months), and the announcement of each groove ("Groove 3 of 12, May 2020, near the Sahara: ..."). The announcement is made once per groove (about every 30 seconds), never on each month, and the visible date is not a live region, so it does not interrupt you.
 
 In Time mode the globe shows no moving trail, only one spot on the centre, whose colour and size follow the first selected dataset that has a value. Its text alternative is the record's label ("the needle stays on the centre ... a spot at the centre shows the data") and the hidden table, which has every value. The spot does not move or animate, so it is the same with reduced motion; the spot is never the only carrier of information.
+
+### Key Events
+
+The **Key events** cards under the globe are a list (`<li>` per card) with a level-3 heading per event. The dataset, the zone and the dates are text (a description list: "In our data" / "When it happened"); the dataset icon is decorative and the dataset name is written next to it. Each photo has alt text describing the scene. The **Play** button's accessible name includes the event and the months it plays (and the zone it selects, when no zone is selected), and the card playing now is marked with `aria-current` and a "Playing now" text.
+
+### How to Use Page
+
+The **How to use** page (`#how-to-use`, in the header) is a single article with one `<h1>` and one `<h2>` per section (Quick start, Read the music, Explore in time, Key events, Two ways to listen, Make it yours, Keyboard shortcuts). Focus moves to its heading when it opens, so screen readers start reading at the top.
 
 ### Data Graph
 

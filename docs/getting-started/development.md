@@ -16,7 +16,7 @@ mkdir earth-jukebox && cd earth-jukebox
 # Clone all repositories (all private except documentation)
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/webapp.git
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/sonification.git
-git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/datasets.git          # ~6.3 GB of monthly maps
+git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/datasets.git          # ~9.1 GB of monthly maps
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/data_processing.git   # extraction scripts (optional)
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/deployment.git
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/documentation.git
@@ -57,12 +57,14 @@ If your backend listens elsewhere (e.g. the Docker backend on another `BACKEND_P
 VITE_API_URL=http://localhost:8001/api
 ```
 
-Other variables read by `vite.config.ts` when starting `npm run dev`:
+Other settings:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `JUKEBOX_DATA_DIR` | `../datasets/data` | Folder served at `/data/` for the globe (JSON listings + HTTP Range, like nginx in production) |
-| `JUKEBOX_API_URL` | `http://localhost:8000` | Target of the Vite `/api` proxy (used when `VITE_API_URL` is empty, i.e. `API_BASE = '/api'`) |
+| `VITE_DATA_URL` | `/data` | Base URL of the dataset files the globe reads (baked into the bundle like `VITE_API_URL`) |
+| `JUKEBOX_DATA_DIR` | `../datasets/data` | Read by `vite.config.ts` when starting `npm run dev`: folder served at `/data/` for the globe (JSON listings + HTTP Range, like nginx in production) |
+
+When `VITE_API_URL` is relative (`/api`), the Vite dev server proxies `/api` to `http://localhost:8000`; that target is fixed in `vite.config.ts` (there is no environment variable for it). See `webapp/.env.example` for every variable.
 
 ### Development Server
 
@@ -120,6 +122,17 @@ python music/sampler.py --download
 ```
 
 This downloads VSCO 2 CE orchestral samples (~440 MB, CC0, one-time download).
+
+### Download the Realistic Sounds (Optional)
+
+The `realistic` music style plays recordings of rain, fire, thunder, wind, traffic and a clock (free licences: CC0,
+public domain, CC BY). Fetch them once:
+
+```bash
+python music/soundscape.py --download
+```
+
+`GET /api/health` then reports `"realistic_sounds": true`. The Docker image already includes them.
 
 ### Prepare the Data
 

@@ -2,7 +2,7 @@
 
 How climate data becomes music, and how to extend the system.
 
-The music engine lives in `sonification/music/` (`orchestra.py` composes the score, `render_audio.py` and `sampler.py` render it). It is driven by the backend (see [Backend Development](backend.md)) or from the command line.
+The music engine lives in `sonification/music/` (`orchestra.py` composes the score, `eras.py` holds the genres and eras, `soundscape.py` the realistic mode, `urgency.py` the CO2 record that sets the tempo, `groove.py` the vinyl mode, `render_audio.py` and `sampler.py` render it). It is driven by the backend (see [Backend Development](backend.md)) or from the command line.
 
 ---
 
@@ -39,7 +39,7 @@ Each frame is reduced to **one number per area**: the area-weighted (cos latitud
 
 ## Normalization
 
-Each variable has a **fixed range** (`vmin`/`vmax` in its metadata, e.g. night lights 0 to 0.1, lightning 0 to 0.4, temperature anomaly -5 to +5 °C), so the same physical value always has the same intensity.
+Each variable has a **fixed range** (`vmin`/`vmax` in its metadata, e.g. night lights 0 to 0.1, lightning 0 to 0.4, temperature anomaly -5 to +5 °C), so the same physical value always has the same intensity. A dataset whose metadata has `log_scale` (ocean chlorophyll, 0.03 to 10+ mg/m³) is mapped on a log scale: each tenfold step is the same pitch step.
 
 ```python
 def normalize(value: float, vmin: float, vmax: float) -> float:
@@ -67,7 +67,7 @@ def pitch(norm: float, grid: list[int]) -> int:
     return grid[round(norm * (len(grid) - 1))]
 ```
 
-Defaults: key `C`, scale `major`, 76 BPM, 4 beats per bar. One data frame (one month for the deployed datasets) is one bar.
+Defaults: key `C`, scale `major`, 4 beats per bar, the genre's tempo (76 BPM for the orchestra). One data frame (one month for the deployed datasets) is one bar; with `"step": "year"` one bar is the same month of successive years, and the pitch scale is that month's range over the years.
 
 ### Musical Scale Quantization
 
@@ -99,10 +99,14 @@ Each climate variable has an assigned instrument, defined in the `ORCHESTRA` tab
 | `lightning` | Timpani | 47 | `timpani` (reported as `percussion` by the API) | 40–55 | no |
 | `fires` | Trombones | 57 | swell | 40–60 | no |
 | `night_lights` (`nightlights`) | Synth pad | 89 | swell | 62–81 | no |
+| `sea_ice` | Bowed glass (melody) | 92 | melody | 74–93 | no |
+| `vegetation` | Clarinet (melody) | 71 | melody | 55–76 | no |
+| `carbon_monoxide` | Bassoon | 70 | swell | 46–65 | no |
+| `chlorophyll` | Vibraphone | 11 | rhythm (strokes per beat = amount) | 60–84 | no |
 | (`aerosol_dust`) | Flute (melody) | 73 | melody | 72–93 | no |
 | (`aerosol_smoke`) | French Horns (melody) | 60 | melody | 53–74 | no |
 
-The "always on" instruments (temperature, CO2) are the foundation; the others play when the phenomenon is present, so an instrument entering is itself information. Dust and smoke exist in the orchestra but, in the deployed backend, have no dataset: only variables that have data are listed by `GET /api/instruments`, so seven instruments sound. The contrabass sits an octave higher than a real contrabass part (E2 to D4) and is re-bowed on every bar line, because laptop and phone speakers play almost nothing below about 100 Hz. The timpani replaced a xylophone that sounded too close to the glockenspiel; their hits per beat follow the flash density.
+The "always on" instruments (temperature, CO2) are the foundation; the others play when the phenomenon is present, so an instrument entering is itself information. Dust and smoke exist in the orchestra but, in the deployed backend, have no dataset: only variables that have data are listed by `GET /api/instruments`, so eleven instruments sound. The contrabass sits an octave higher than a real contrabass part (E2 to D4) and is re-bowed on every bar line, because laptop and phone speakers play almost nothing below about 100 Hz. The timpani replaced a xylophone that sounded too close to the glockenspiel; their hits per beat follow the flash density.
 
 Notes on the deployed datasets:
 
@@ -110,7 +114,49 @@ Notes on the deployed datasets:
 - Lightning is the **share of the area with lightning** (0 to 1), not a flash count, and only exists between 55°S and 55°N.
 - Fires are the **number of days of the month with a fire** (2002-07 to 2026-11). The trombones swell and hold, louder with more fires, below the piano's chords rather than as a melody inside them.
 - Night lights are **yearly**: one value per year repeated for its 12 months. The synth pad, the only electronic sound, starts at full level each January when the value changes and fades slowly over the year to a soft background (`fade=True`, `fade_floor=0.75`, `smooth=False` so the yearly steps are not blurred).
+- Sea ice is the **share of the sea covered by ice** (%); land has no value, so over an area it is the share of its sea that is frozen. The bowed glass enters above about 5 % and is silent over land and warm seas. December 1987 and January 1988 are missing at the source.
+- Vegetation is the **NDVI** of the land (-0.2 to 1), silent over deserts (under about 0.12) and the sea.
+- Carbon monoxide is the MOPITT **total column** (10^18 molecules/cm²); the scale starts at the clean background (1.4), so only pollution above it plays. 20 months inside its range have no value.
+- Ocean chlorophyll (plankton) is in mg/m³, on a log scale, sea only; more vibraphone strokes per beat in a bloom.
 - A variable is silent for the months its data does not cover, so one piece can mix series with different start dates.
+
+### Genres and the realistic mode
+
+`genre` (API v2.8) sets one instrument set and groove for the whole piece, defined in `GENRES` in `sonification/music/eras.py` (data style only):
+
+| `genre` | Name | Reference tempo (BPM) |
+|---|---|---|
+| `orchestra` (default) | Orchestra | 76 |
+| `ragtime` | Ragtime & early jazz | 96 |
+| `swing` | Swing & big band | 126 |
+| `rocknroll` | Rock'n'roll | 150 |
+| `funk` | Funk & disco | 112 |
+| `synthpop` | Synth-pop | 116 |
+| `house` | House & electronic | 124 |
+| `trap` | Modern pop & trap | 140 |
+| `realistic` | Realistic sounds | 76 |
+
+Aliases are accepted (`jazz`, `rock`, `disco`, `electro`, `pop`, `classical`). In a genre, each dataset takes the genre's melody, comping or swell instrument; the bowed glass (sea ice) and synth pad (night lights) stay the same. `GET /api/instruments?genre=...` gives the instrument names.
+
+`realistic` (`sonification/music/soundscape.py`) has no instruments: each variable is heard as the sound of what it is. The recordings are free (CC0, public domain, CC BY), downloaded with `python music/soundscape.py --download` (done in the Docker image; `GET /api/health` reports `realistic_sounds`).
+
+| Variable | Realistic sound |
+|---|---|
+| Rain | Rain recording, plus a downpour layer when it pours |
+| Snow | Soft, high wind |
+| Fires | Campfire, plus a fireplace and a low roar for big fires |
+| Lightning | Real thunderclaps, as many as the flashes |
+| Temperature | A low heat drone that trembles faster and clashes when warmer (with `tempo_source: "temperature"`: a heartbeat) |
+| CO2 | City traffic; the heartbeat plays at the CO2's tempo, irregular above 400 ppm |
+| Night lights | 50 Hz hum of street lamps (synthesised) |
+| Sea ice | "Singing" ice: pings of cracks and creaks of floes (synthesised) |
+| Vegetation | Crickets and a cicada (synthesised) |
+| Carbon monoxide | Idling engines and machines (synthesised) |
+| Ocean plankton | Bubbles rising in the sea (synthesised) |
+
+`eras` (API v2.7, engine only, not used by the webapp) instead plays each bar in the style of its date, from a Romantic orchestra before 1910 to modern pop / trap from 2010; it cannot be combined with `genre`.
+
+### Regional palettes
 
 There are also regional palettes (`palette: "auto"` swaps in local instruments for the zone, e.g. sitar for India); they are defined in `PALETTES` in `orchestra.py` and listed by `GET /api/options` (engine API only).
 
@@ -124,13 +170,13 @@ There are also regional palettes (`palette: "auto"` swaps in local instruments f
 # sonification/music/orchestra.py
 ORCHESTRA = {
     # ...
-    "sea_level": dict(name="Sea level - Cello (melody)", role="melody", program=42, channel=10,
+    "sea_level": dict(name="Sea level - Cello (melody)", role="melody", program=42, channel=14,
                       low=36, high=60, gain=2.0, gate=0.03, levels=[0.35, 0.65],
                       level=0.80, pan=60),
 }
 ```
 
-Pick an unused MIDI `channel` (0 to 8 are taken, 9 is the GM drum channel). `always_on=True` makes it a foundation instrument; `gain` and `gate` control when it enters; `levels` are the density thresholds. Copy the closest existing entry and adjust.
+Pick an unused MIDI `channel` (0 to 8 and 10 to 13 are taken, 9 is the GM drum channel). `always_on=True` makes it a foundation instrument; `gain` and `gate` control when it enters; `levels` are the density thresholds. Copy the closest existing entry and adjust.
 
 ### 2. Produce the Intensity Map
 
@@ -141,7 +187,7 @@ Either deliver `<prefix>_<variable>.npz` + `.json` in the format of `INTENSITY_M
 
 ### 3. Expose it to the API
 
-The composer picks up variables from `ORCHESTRA` automatically. For the short `dataset_id` the webapp sends, add the id to `SHORT_IDS` (variable → `dataset_id`) and, if the webapp uses another name, to `VARIABLE_ALIASES` in `sonification/backend/app.py`. The webapp's own list of tracks is separate (`webapp/src/data/tracks.ts`).
+The composer picks up variables from `ORCHESTRA` automatically. For the short `dataset_id` the webapp sends, add the id to `SHORT_IDS` (variable → `dataset_id`) and, if the webapp uses another name, to `VARIABLE_ALIASES` in `sonification/backend/app.py`. For a new genre sound, add the variable to the genre tables in `sonification/music/eras.py`, and for the realistic mode a sound in `soundscape.py`. The webapp builds its track list from `GET /api/instruments`; it also needs an entry in `webapp/src/data/datasetRegistry.ts` (globe layer, units) and a colour in `webapp/src/data/trackColors.ts` (see [Frontend Development](frontend.md)).
 
 ---
 
@@ -165,7 +211,16 @@ Music is organized into bars:
 
 - 4 beats per bar
 - Each bar = one data frame (one month for the deployed monthly datasets; one week for daily data, `frames_per_bar` = 7)
-- `bpm` defaults to 76; with `duration_s` the tempo is nudged so the bars last exactly that many seconds (30 s at the default tempo is 10 bars, so a chunk of `/api/sonify` is 10 months)
+- `bpm` defaults to the genre's tempo (76 for the orchestra); with `duration_s` the number of bars is chosen with each bar's own tempo so that the piece lasts exactly that many seconds
+
+### Tempo
+
+By default each bar has its own tempo (`tempo_from_temperature: true`, the name is kept for compatibility), set by `tempo_source`:
+
+- `co2` (default since API v2.13): the **global CO2** of the bar's dates (`sonification/music/urgency.py`: Law Dome ice cores to 1958, Mauna Loa 1959-2024, 2025-2026 estimated). The genre's tempo x (0.8 + 0.45 u), with u = (ppm - 290) / (430 - 290): x0.8 in 1880, about x1.23 today. The same date gives the same tempo for every area, and the music speeds up with the years. A 30 s chunk of `/api/sonify` or `/api/zones/zone-data` therefore covers about 8 months in 1880 and 12 to 13 today; clients must follow `next_time_period` and time the bars with `bar_starts_s`.
+- `temperature` (the v2.9 behaviour): the temperature of the bar on the 5th to 95th percentile of the area's series, x0.75 (cold) to x1.25 (hot).
+
+`score.tempo_map`, `score.tempo_range`, `score.tempo_source` and `score.co2` (`co2_ppm_per_bar`, `urgency_per_bar`) describe it. In vinyl mode (`POST /api/zones/groove`) the tempo stays fixed: 3 s per bar.
 
 There are two styles. `data` (default) is faithful to the data: pitch = value, loudness/density = amount, nothing added. `musical` adds harmony, an intro that introduces the instruments, a climax on the most anomalous bar and a ritardando outro. The webapp's chunks use `data`.
 
@@ -234,4 +289,4 @@ With the temperature anomaly dataset (1880 → 2025, 1 bar = 1 month), the piano
 - the most recent record years play near the top,
 - a chunk starting in `1950-01` and the next one (`next_time_period`) use the same scale, so they connect.
 
-Result: an ascending line over the decades, reflecting rising temperatures.
+Result: an ascending line over the decades, reflecting rising temperatures, played faster and faster as the CO2 rises.

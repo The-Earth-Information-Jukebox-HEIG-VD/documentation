@@ -4,8 +4,8 @@ Deploy EarthChestra (the Earth Information Jukebox project's app) to a server (V
 
 !!! info "Published images"
     The production setup (`docker-compose.yml` + `docker-compose.prod.yml`) pulls images from GHCR. Releases are
-    published: `v1.1.0` is tagged in `webapp`, `sonification` and `datasets`, so the images exist as `1.1.0`
-    (Git tag without the `v`). To publish a new version see [Releasing images](ci-cd.md#releasing-images); to build
+    published: the latest tags are `v1.3.0` in `webapp` and `datasets` and `v1.3.2` in `sonification`, so the images
+    exist as `1.3.0` / `1.3.2` (Git tag without the `v`). To publish a new version see [Releasing images](ci-cd.md#releasing-images); to build
     on the server from the sibling repositories instead, use `docker-compose.local.yml`
     (see [Docker](docker.md#quick-start-local-build)).
 
@@ -37,9 +37,9 @@ cp .env.example .env
 Then edit `.env`:
 
 ```bash
-WEBAPP_VERSION=1.1.0                   # pin each release instead of latest (no "v")
-SONIFICATION_VERSION=1.1.0
-DATASETS_VERSION=1.1.0
+WEBAPP_VERSION=1.3.0                   # pin each release instead of latest (no "v")
+SONIFICATION_VERSION=1.3.2
+DATASETS_VERSION=1.3.0
 DOMAIN=example.com                     # webapp on DOMAIN, API on api.DOMAIN
 ACME_EMAIL=admin@example.com           # Let's Encrypt account
 ```
@@ -107,16 +107,18 @@ On first start the backend converts the datasets in the background; wait until `
 
 ## Small Server (data from a host folder)
 
-The datasets image is a single 6.3 GB layer: pulling it needs about twice that, and `data-init` then copies another
-6.3 GB into the `jukebox-data` volume (~19-23 GB in total). On a small server (1 vCPU, 2 GB RAM, 20 GB disk) add
+The datasets image is a single ~9.1 GB layer: pulling it needs about twice that, and `data-init` then copies another
+~9.1 GB into the `jukebox-data` volume (~27-32 GB in total). On a small server (1 vCPU, 2 GB RAM, 20 GB disk) add
 `docker-compose.hostdata.yml`: the data is stored once as plain files and mounted read-only into the backend and the
-webapp (~11 GB in total).
+webapp (~14 GB in total).
 
-| Measured at 1 CPU / 1.5 GB RAM | Result |
+| Measured at 1 CPU / 1.5 GB RAM, on an earlier version | Result |
 |---|---|
 | First-start data preparation (6 datasets, measured before fires was added) | 53 s, peak 911 MiB |
 | Backend memory afterwards | ~350 MiB |
-| One 30 s chunk, six instruments (there are now seven) | ~1.7 s (expect 2-4 s on a cloud vCPU) |
+| One 30 s chunk, six instruments (there are now eleven) | ~1.7 s (expect 2-4 s on a cloud vCPU) |
+
+With eleven datasets the first-start preparation and a chunk with every track on take longer; these figures have not been measured again.
 
 ```bash
 # Optional on 2 GB RAM: 2 GB swap as a safety margin
@@ -124,7 +126,7 @@ sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
 sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
-# Data: clone once and keep only data/ (all seven folders are used)
+# Data: clone once and keep only data/ (11 of the 12 folders are used; rain_belt is not)
 git clone --depth 1 git@github.com:The-Earth-Information-Jukebox-HEIG-VD/datasets.git
 mv datasets/data ~/jukebox-data && rm -rf datasets
 ```
@@ -134,8 +136,8 @@ mv datasets/data ~/jukebox-data && rm -rf datasets
 ```bash
 COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml:docker-compose.hostdata.yml
 JUKEBOX_DATA_PATH=/home/ubuntu/jukebox-data   # absolute path
-WEBAPP_VERSION=1.1.0
-SONIFICATION_VERSION=1.1.0
+WEBAPP_VERSION=1.3.0
+SONIFICATION_VERSION=1.3.2
 DOMAIN=example.com
 ACME_EMAIL=admin@example.com
 ```
@@ -219,8 +221,8 @@ Example response:
 ```json
 {
   "status": "ok",
-  "version": "2.6",
-  "datasets": 7,
+  "version": "2.14",
+  "datasets": 11,
   "data_dir": "/app/data",
   "built_dir": "/app/cache/_datasets",
   "preparing_data": false,
@@ -228,7 +230,8 @@ Example response:
   "full_api": false,
   "audio_rendering": true,
   "mp3_encoding": true,
-  "orchestral_samples": false
+  "orchestral_samples": false,
+  "realistic_sounds": true
 }
 ```
 

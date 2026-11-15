@@ -16,17 +16,23 @@
 
 ## What is this?
 
-**EarthChestra**, the Earth Information Jukebox project's app, transforms NASA climate data into sound. Temperature anomalies become musical tones: warmer years sound higher, cooler years lower. A 7-instrument orchestra, one instrument per dataset, brings climate variables to life:
+**EarthChestra**, the Earth Information Jukebox project's app, transforms NASA climate data into sound. Pick a zone on the globe and an 11-instrument orchestra plays its data month by month: higher values sound higher or louder, and the tempo speeds up with the global CO2 of each month. One instrument per dataset:
 
 | Variable | Instrument | Role |
 |----------|------------|------|
-| Temperature | Piano | Chords (harmony) |
-| CO2 | Contrabass | Bass line |
-| Precipitation (rain) | Violins | Melody |
-| Snowfall | Glockenspiel | Melody |
+| Temperature anomaly | Piano | Chords (harmony), always playing |
+| CO2 | Contrabass | Bass line, always playing |
+| Rain | Violins | Melody |
+| Snow | Glockenspiel | Melody |
 | Lightning | Timpani | Percussion (thunder) |
 | Fires | Trombones | Swell |
 | Night lights | Synth pad | Swell (yearly) |
+| Sea ice | Bowed glass | Melody, high and sustained |
+| Vegetation (NDVI) | Clarinet | Melody, land only |
+| Carbon monoxide | Bassoon | Swell |
+| Ocean plankton (chlorophyll) | Vibraphone | Strokes per beat, sea only (log scale) |
+
+The same data can also be played in seven other music styles (ragtime, swing, rock'n'roll, funk, synth-pop, house, trap) or as realistic sounds (rain, fire, thunder, a heartbeat), and in a vinyl mode where the globe becomes a record.
 
 ## Quick Links
 
@@ -40,6 +46,7 @@
 | [webapp](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/webapp) | React frontend with Web Audio API |
 | [sonification](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/sonification) | FastAPI backend + music composition engine |
 | [datasets](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/datasets) | Pre-processed NASA climate data |
+| [data_processing](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/data_processing) | Scripts that extract the NASA sources onto the common grid |
 | [deployment](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/deployment) | Docker Compose orchestration |
 | [documentation](https://github.com/The-Earth-Information-Jukebox-HEIG-VD/documentation) | This documentation |
 

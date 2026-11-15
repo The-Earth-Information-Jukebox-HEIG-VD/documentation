@@ -37,24 +37,46 @@ Future plans and features for Earth Information Jukebox and its app, EarthChestr
 - [x] Globe playback as flowing spots drawn on the GPU (instead of 3D cylinders)
 - [x] Vinyl mode backend: `POST /api/zones/groove` (API v2.6, a path in space at one fixed date)
 
+### Completed (v1.2)
+
+- [x] Vinyl mode in the webapp: the globe becomes a record (10 grooves of 30 s), played through `POST /api/zones/groove`
+- [x] Vinyl travel modes: Space (one date, across places), Time (one place, through the months, on `POST /api/zones/zone-data`) and Both (a month or a year per groove)
+- [x] Music styles: orchestra, realistic sounds and seven genres (API v2.8, `GET /api/genres`), recommended styles first in the menu
+- [x] Tempo that follows the data (API v2.9), genre in vinyl mode and exact chunk timing (`duration_s`, `bar_starts_s`, API v2.10)
+- [x] Sound on iPhone with the silent switch on
+
+### Completed (v1.3)
+
+- [x] Logo-derived palette and visual identity, light and dark themes
+- [x] 15 key events as cards under the globe (El Niño, wildfires, floods, storms, Hunga Tonga)
+- [x] Month travel: one month year after year (`"step": "year"`, API v2.12)
+- [x] Sea ice (NSIDC Sea Ice Index 1979-2026, bowed glass, API v2.11)
+- [x] Global CO2 sets the tempo in every genre (API v2.13; sonification `v1.3.2`)
+- [x] Vegetation (MODIS NDVI, clarinet), carbon monoxide (MOPITT, bassoon) and ocean plankton (MODIS Aqua chlorophyll, vibraphone) (API v2.14; datasets `v1.3.0`, sonification `v1.3.2`)
+
+### On `main`, not yet tagged
+
+- [x] How to use page (`#how-to-use`) in the webapp
+- [x] Animated logo (`SpinningLogo`): a gramophone tonearm swings onto the vinyl Earth, the record turns once, the arm swings back; still with reduced motion
+
 ---
 
 ## Short Term (Next Release)
 
 ### In Progress
 
-- [ ] Vinyl experience mode, frontend: one month played across the globe like a record (webapp work in progress, still simulated on `POST /api/zones/zone-data`; to be switched to `POST /api/zones/groove`, which the backend serves since API v2.6)
+- [ ] The animated logo on the loading screen and in the documentation site header
 
 ### Enhanced Data Sources
 
 - [ ] Data for the engine's dust (Flute) and smoke (French Horns) voices
 - [ ] Real-time data updates
-- [ ] More climate variables (sea level, ice extent)
+- [ ] More climate variables (sea level, land ice)
 
 ### Improved Audio
 
 - [ ] VSCO samples by default
-- [ ] More instrument options
+- [x] More instrument options (nine music styles)
 - [ ] Custom instrument mapping
 - [x] Concert-hall reverb in the rendering
 - [ ] Spatial audio
@@ -67,7 +89,8 @@ Future plans and features for Earth Information Jukebox and its app, EarthChestr
 - [ ] User accounts and preferences
 - [ ] Audio transcript (how data maps to sound, per instrument)
 - [ ] Keyboard shortcuts help dialog on `?`
-- [ ] Guided tours for new users
+- [x] A How to use page for new users
+- [ ] Interactive guided tours
 - [ ] Mobile-optimized interface
 
 ---
@@ -85,7 +108,7 @@ Future plans and features for Earth Information Jukebox and its app, EarthChestr
 ### Visualization
 
 - [x] Synchronized map visualization (the globe draws the zone's data month by month with the music)
-- [x] Timeline with key climate moments
+- [x] Key events linked to the timeline
 - [x] Interactive data chart (Graph toggle in the player)
 - [ ] Visual representation of current pitch
 
@@ -100,7 +123,8 @@ Future plans and features for Earth Information Jukebox and its app, EarthChestr
 
 - [ ] Guided lessons about climate change
 - [ ] Explanation panels for data context
-- [ ] Compare historical events to data
+- [x] Compare historical events to data (key events cards)
+- [ ] More key events
 - [ ] Teacher mode with classroom features
 
 ---

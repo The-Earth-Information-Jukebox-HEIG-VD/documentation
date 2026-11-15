@@ -17,7 +17,7 @@ Builds the images from the sibling repositories and starts the whole stack:
 # Clone the repositories side by side
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/webapp.git
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/sonification.git
-git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/datasets.git    # ~6.3 GB of data
+git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/datasets.git    # ~9.1 GB of data
 git clone git@github.com:The-Earth-Information-Jukebox-HEIG-VD/deployment.git
 cd deployment
 
@@ -40,7 +40,7 @@ Stop it with `./scripts/run-local.sh down`.
     The first start converts the datasets in the background (a few minutes). Music is available once
     `GET /api/health` reports `"preparing_data": false`.
 
-    A plain `docker compose up -d` pulls the pre-built images from GHCR instead (published, latest release `1.1.0`;
+    A plain `docker compose up -d` pulls the pre-built images from GHCR instead (published, latest releases `1.3.0` for webapp and datasets, `1.3.2` for sonification;
     run `docker login ghcr.io` first, the packages are private); see [Docker Deployment](../deployment/docker.md).
 
 ---
@@ -110,8 +110,8 @@ Example response (abridged):
 ```json
 {
   "status": "ok",
-  "version": "2.6",
-  "datasets": 7,
+  "version": "2.14",
+  "datasets": 11,
   "preparing_data": false,
   "merge_datasets": true,
   "audio_rendering": true,
@@ -127,14 +127,15 @@ Example response (abridged):
 Visit http://localhost:5173 (manual setup) or http://localhost (Docker). You should see:
 
 - The EarthChestra interface with the globe
-- The list of tracks (one instrument per dataset)
+- The list of tracks (one instrument per dataset, eleven with the full data)
+- The **Music style** menu and the **Time travel / Vinyl** switch
 - Audio playback controls
 
 ### 3. Test Sonification
 
-1. Select a zone (or use the default)
+1. Select a zone on the globe (Play stays disabled until you do)
 2. Click the **Play** button (or press `Space`)
-3. You should hear the climate data as music!
+3. You should hear the climate data as music. The **How to use** page in the header explains the rest.
 
 ---
 

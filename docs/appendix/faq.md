@@ -8,7 +8,7 @@ Common questions about Earth Information Jukebox.
 
 ### What is Earth Information Jukebox?
 
-Earth Information Jukebox is a project that transforms NASA climate data into music through a process called sonification. Temperature anomalies become musical tones: warmer years sound higher, cooler years lower. The app itself is called **EarthChestra**; "Earth Information Jukebox" is the project and NASA Space Apps challenge name.
+Earth Information Jukebox is a project that transforms NASA climate data into music through a process called sonification. Eleven datasets (temperature, CO2, rain, snow, lightning, fires, night lights, sea ice, vegetation, carbon monoxide, ocean plankton) each play their own instrument: higher values sound higher or louder. The app itself is called **EarthChestra**; "Earth Information Jukebox" is the project and NASA Space Apps challenge name.
 
 ### Who is this for?
 
@@ -19,7 +19,7 @@ Earth Information Jukebox is a project that transforms NASA climate data into mu
 
 ### Is this a real NASA project?
 
-This project was created for the NASA Space Apps Challenge 2026 hackathon. It uses real NASA data (GISTEMP temperature anomalies, GPM IMERG rain and snow, ISS LIS lightning, Earth at Night lights) but is developed by an independent team from HEIG-VD.
+This project was created for the NASA Space Apps Challenge 2026 hackathon. It uses real NASA data (GISTEMP temperature anomalies, GPM IMERG rain and snow, ISS LIS lightning, Earth at Night lights, MODIS fires, vegetation and ocean chlorophyll, MOPITT carbon monoxide) and the NSIDC Sea Ice Index, but is developed by an independent team from HEIG-VD.
 
 ---
 
@@ -51,12 +51,16 @@ This project was created for the NASA Space Apps Challenge 2026 hackathon. It us
 | Trombones | Fires | 2002-2026 |
 | Timpani | Lightning | 2017-2023 |
 | Synth pad | Night lights (one value per year) | 2012-2023 |
+| Bowed glass | Sea ice | 1979-2026 |
+| Clarinet | Vegetation (NDVI) | 2000-2026 |
+| Bassoon | Carbon monoxide | 2000-2024 |
+| Vibraphone | Ocean plankton (chlorophyll) | 2002-2026 |
 
-The list shown in the app comes from the backend (`GET /api/instruments`).
+The list shown in the app comes from the backend (`GET /api/instruments`). In another music style the instruments change (`GET /api/instruments?genre=...`).
 
 ### Can I download the music?
 
-Not from the webapp. The deployed backend only serves the webapp's endpoints. Developers can enable the engine's full API (`JUKEBOX_FULL_API=1`), whose `POST /api/compose` returns MIDI, per-instrument MIDI stems and rendered MP3/WAV files.
+Not from the webapp. The Docker image sets `JUKEBOX_FULL_API=0`, so the deployed backend only serves the webapp's endpoints. A backend run from source serves the engine's full API by default (`JUKEBOX_FULL_API=1`), whose `POST /api/compose` returns MIDI, per-instrument MIDI stems and rendered MP3/WAV files.
 
 ---
 
@@ -86,6 +90,9 @@ We use NASA data sources, put on one common 0.25° grid by the team:
 - ISS LIS (via NASA SVS) for lightning
 - Earth at Night (NASA SVS) for night lights
 - CO2 maps extracted by the team (outline pixels of the source picture are removed by the backend)
+- MODIS for fires, vegetation (NDVI, Terra) and ocean chlorophyll (Aqua)
+- MOPITT (on NASA Terra) for carbon monoxide
+- NSIDC Sea Ice Index for sea ice
 
 Each instrument plays the mean of its dataset over the selected zone, one bar per month.
 
@@ -113,11 +120,13 @@ Yes! The app is designed with accessibility as a core feature:
 | ← → | Seek backward/forward |
 | Home/End | Jump to start/end |
 | M | Mute/unmute |
-| Esc | Close panels and dialogs |
+| Esc | Back to zone selection, or close a dialog |
+
+In vinyl mode, ← → go to the previous or next groove. The **How to use** page lists every shortcut.
 
 ### Is there a text alternative to the audio?
 
-Partly. The About page explains how data maps to sound, and the live region announces the current value of the main track while playing. The globe and the data graph also have hidden data tables for screen readers.
+Partly. The How to use and About pages explain how data maps to sound, and the live region announces the current value of the main track while playing. The globe and the data graph also have hidden data tables for screen readers.
 
 ---
 
@@ -125,7 +134,7 @@ Partly. The About page explains how data maps to sound, and the live region anno
 
 ### What technology stack is used?
 
-- **Frontend**: React, TypeScript, Vite, react-globe.gl (three.js), i18next, Web Audio API (playback of MP3 chunks)
+- **Frontend**: React 19, TypeScript, Vite 6, react-globe.gl (three.js), i18next, Web Audio API (playback of MP3 chunks)
 - **Backend**: FastAPI, Python, NumPy
 - **Audio**: MIDI, VSCO 2 CE samples, GeneralUser GS SoundFont, MP3
 - **Deployment**: Docker, Docker Compose
@@ -141,7 +150,7 @@ cp .env.example .env   # make sure VITE_API_URL=/api is set
 ```
 
 !!! note
-    The pre-built GHCR images are published (latest release `1.1.0`): with `docker login ghcr.io`, a plain `docker compose up -d` pulls them instead of building.
+    The pre-built GHCR images are published (latest releases: webapp and datasets `1.3.0`, sonification `1.3.2`): with `docker login ghcr.io`, a plain `docker compose up -d` pulls them instead of building.
 
 See the [Quick Start](../getting-started/quickstart.md) guide.
 
@@ -166,7 +175,7 @@ Open an issue on the [GitHub repository](https://github.com/The-Earth-Informatio
 
 The backend maps each value to a MIDI note within the instrument's pitch range (piano chords: notes 48-72, C3 to C5), snapped to the musical scale. The range is scaled on the whole series of the selected zone, so the highest anomaly of the zone gives the highest chord and the same value always gives the same note, across chunks.
 
-In the default data-faithful style, a triangle marks unusually hot months and a woodblock unusually cold ones.
+In the default data-faithful style, a triangle marks unusually hot months and a woodblock unusually cold ones. The tempo of each bar follows the global CO2 of its month (the genre's tempo x0.8 in 1880, about x1.23 today), so the music speeds up over the decades.
 
 ### Why use music instead of simple tones?
 
@@ -177,7 +186,7 @@ In the default data-faithful style, a triangle marks unusually hot months and a 
 
 ### Can I customize the sonification?
 
-In the webapp you choose the zone, the instrument tracks and the start date. The engine's own `POST /api/compose` endpoint (development only, `JUKEBOX_FULL_API=1`) can also adjust:
+In the webapp you choose the zone, the instrument tracks, the start date, one month year after year (**Months**), and the music style: the orchestra, realistic sounds, or one of seven genres (ragtime, swing, rock'n'roll, funk, synth-pop, house, trap). The engine's own `POST /api/compose` endpoint (development only, `JUKEBOX_FULL_API=1`) can also adjust:
 - Musical key (C, D, etc.)
 - Scale (major, minor, pentatonic)
 - Tempo (BPM)
@@ -207,6 +216,10 @@ The data is a snapshot stored in the `datasets` repository; it is not updated li
 | Lightning (ISS LIS) | 2017-03 → 2023-07 | Monthly, 55°S-55°N only |
 | Fires (MODIS) | 2002-07 → 2026-11 | Monthly (days of the month with a fire) |
 | Night lights (Earth at Night) | 2012 → 2023 | Yearly |
+| Sea ice (NSIDC Sea Ice Index) | 1979-01 → 2026-10 | Monthly, no 1987-12 and 1988-01 |
+| Vegetation (MODIS Terra NDVI) | 2000-03 → 2026-10 | Monthly, land only |
+| Carbon monoxide (MOPITT) | 2000-04 → 2024-10 | Monthly, 20 months missing at the source |
+| Ocean plankton (MODIS Aqua chlorophyll) | 2002-07 → 2026-10 | Monthly, sea only |
 
 ### Can I use my own data?
 
