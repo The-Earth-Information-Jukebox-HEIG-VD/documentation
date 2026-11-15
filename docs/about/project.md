@@ -16,16 +16,17 @@ We transform climate visualizations into **audio** through a process called **so
 
 ## How It Works
 
-```
-┌─────────────────┐     ┌─────────────────────┐     ┌─────────────────┐
-│  NASA gridded   │────▶│  Sonification API   │────▶│     Webapp      │
-│  datasets       │     │  (FastAPI)          │     │  (React)        │
-└─────────────────┘     └─────────────────────┘     └─────────────────┘
-  one .npy per month       zone mean per month        globe + zone pick
-  720×1440, 0.25° grid     score composition          track selection
-  GISTEMP, GPM IMERG,      MIDI → MP3 rendering       30 s MP3 chunks
-  ISS LIS, MODIS, ...      (VSCO / SoundFont)         played with Web Audio
-```
+[![Diagram: from NASA maps to music in four steps. 1, NASA and partner data; 2, one common grid; 3, the composer; 4, the web jukebox. A footer box says there is no generative AI in the music.](../assets/architecture-simple.png)](../assets/architecture-simple.png)
+
+The diagram shows the journey from NASA maps to music in four steps:
+
+- **NASA and partner data**: 11 monthly datasets (temperature, rain, snow, sea ice, CO₂, fires, lightning, night lights, vegetation, carbon monoxide, ocean plankton) are fetched by extraction scripts.
+- **One common grid**: every map, whatever its projection, is put on the same 0.25° grid of the globe, one map per month. For the region you pick, each dataset becomes one number per month, the area-weighted average.
+- **The composer**: each dataset plays its own instrument. The value sets the pitch, the amount sets the loudness, and an instrument plays only where its phenomenon is present. The tempo follows the world's CO₂, so the music speeds up from 1880 to today. You can hear it as an orchestra, in 7 other music styles, or as realistic sounds (rain, fire, thunder, a heartbeat).
+- **The web jukebox**: the result arrives as 30-second MP3 pieces, played under a 3D globe that draws the data, with a graph of each dataset, vinyl mode, month travel and key events. It works with a keyboard and a screen reader, in English, French and German.
+
+There is no generative AI in the music. Fixed rules turn the data into notes, so the same data always gives the same piece. The steps below give the details.
+
 
 1. **Data preparation**: NASA and partner sources (GISTEMP temperature anomalies, GPM IMERG rain and snow, ISS LIS lightning, Earth at Night lights, MODIS fires, CO2 maps extracted by the team, NSIDC Sea Ice Index, MODIS Terra vegetation index, MOPITT carbon monoxide, MODIS Aqua ocean chlorophyll) are converted by the `data_processing` scripts onto one common 0.25° grid (720×1440), one `.npy` file per month, stored in the `datasets` repository.
 
