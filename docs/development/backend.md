@@ -42,11 +42,13 @@ sonification/
 │   ├── API.md              # engine API (development)
 │   ├── FRONTEND_API.md     # the calls the webapp uses
 │   ├── test_api.py         # end-to-end API tests
+│   ├── test_groove.py      # vinyl mode (POST /api/zones/groove)
 │   ├── test_prepare_data.py
 │   └── cache/              # generated compositions (default JUKEBOX_CACHE_DIR)
 ├── music/
 │   ├── orchestra.py        # instrument definitions (ORCHESTRA) + score composition
 │   ├── zone_to_midi.py     # zones, scales, one variable -> MIDI
+│   ├── groove.py           # vinyl mode: values along a path in space at one date
 │   ├── composition.py      # tempo map, harmony helpers
 │   ├── midi_writer.py
 │   ├── sampler.py          # SFZ sampler (VSCO 2 CE orchestral samples)
@@ -70,7 +72,7 @@ sonification/
 | `JUKEBOX_CACHE_DIR` | `backend/cache` (`/app/cache` in Docker) | Generated compositions (safe to delete); must be writable |
 | `JUKEBOX_BUILT_DIR` | `<cache>/_datasets` | Datasets converted from the raw folders by `prepare_data.py`; scanned in addition to `JUKEBOX_DATA_DIR` |
 | `JUKEBOX_CORS` | `*` | Allowed CORS origins, comma-separated |
-| `JUKEBOX_FULL_API` | `1` (`0` in Docker) | `0` serves only `/api/health`, `/api/instruments`, `/api/sonify` and `/api/zones/zone-data` |
+| `JUKEBOX_FULL_API` | `1` (`0` in Docker) | `0` serves only `/api/health`, `/api/instruments`, `/api/sonify`, `/api/zones/zone-data`, `/api/zones/series` and `/api/zones/groove` |
 | `JUKEBOX_MERGE_DATASETS` | `0` (`1` in Docker) | `1`: each requested variable is read from its own dataset and lined up by date |
 | `JUKEBOX_CHUNK_SECONDS` | `30` | Length of one piece returned by `/api/sonify` |
 | `JUKEBOX_PREPARE` | `1` | `serve.py` only: `0` skips the raw-data conversion at start-up |
@@ -89,6 +91,7 @@ nightlights_2012_2023/nightlights_<YYYY>.npy               (brightness 0-1, one 
 temperature_anomaly_1880_2025/temperature_anomaly_<YYYY>_<MM>.npy
 lightning_2017_2023/lightning_<YYYY>_<MM>.npy              (share of each pixel with lightning, 0-1)
 co2_2002_2022/co2_<YYYY>_<MM>.npy                          (ppm)
+fires_2002_2026/fires_<YYYY>_<MM>.npy                      (days of the month with a fire)
 ```
 
 At start-up `serve.py` runs `prepare_data.py` in the background. It converts those folders into the datasets below in `<cache>/_datasets`:
@@ -101,9 +104,10 @@ At start-up `serve.py` runs `prepare_data.py` in the background. It converts tho
 | `real_nightlights_2012_2023` | night lights, 1°; one map per year, repeated for its 12 months |
 | `real_lightning_2017_2023` | lightning activity, 1°, 55°S to 55°N |
 | `real_co2_2002_2022` | CO₂, 1°, map-outline pixels removed |
+| `real_fires_2002_2026` | fires (days of the month with a fire), 1° |
 
 - The API answers at once; `GET /api/health` has `"preparing_data": true` until the conversion is over, and each dataset appears in `GET /api/datasets` when ready. The first start takes a few minutes; with the cache on a volume, later starts only rebuild what changed.
-- The recipes are the `RECIPES` list at the top of `backend/prepare_data.py`. A folder it does not know is ignored (for instance `fires_2002_2026` in the `datasets` repository has no recipe yet).
+- The recipes are the `RECIPES` list at the top of `backend/prepare_data.py`. A folder it does not know is ignored; all seven folders of the `datasets` repository have a recipe.
 - Ready-made `<prefix>_<variable>.npz` + `.json` files placed directly in `JUKEBOX_DATA_DIR` are served as before.
 - The CO₂ maps still carry the outline of the source picture; the converter sets those pixels to NaN, so very small areas can have little or no CO₂ in some months.
 
@@ -119,6 +123,8 @@ See the [API reference](../api/reference.md) for schemas.
 | GET | `/api/instruments` | yes | Dataset-to-instrument mapping (webapp call) |
 | POST | `/api/sonify` | yes | One 30 s audio chunk |
 | POST | `/api/zones/zone-data` | yes | Same as `/api/sonify` with the webapp's field names (`dataset_ids`); the webapp's call |
+| POST | `/api/zones/series` | yes | Monthly series of the selected points, no audio (the webapp's data graph) |
+| POST | `/api/zones/groove` | yes | Vinyl mode (v2.6): the music of a path in space at one fixed date |
 | GET | `/api/options` | no | UI menu options (zones, palettes, scales...) |
 | GET | `/api/datasets` | no | Available datasets |
 | POST | `/api/sonify/debug` | no | `/api/sonify` with the engine's knobs and a detailed answer |
@@ -126,7 +132,7 @@ See the [API reference](../api/reference.md) for schemas.
 | GET | `/api/compositions/{id}` | no | Fetch an earlier composition |
 | GET | `/api/files/{id}/{file}` | no | Download a generated file |
 
-The deployed image serves only the first four rows. Use `-e JUKEBOX_FULL_API=1` to also serve the engine's endpoints.
+The deployed image serves only the first six rows (`FRONTEND_PATHS` in `backend/app.py`). Use `-e JUKEBOX_FULL_API=1` to also serve the engine's endpoints.
 
 ---
 
@@ -187,6 +193,7 @@ The full instrument table is in [Sonification Development](sonification.md#the-o
 ```bash
 cd sonification
 python -m pytest backend/test_api.py -q       # end-to-end API tests (needs datasets in JUKEBOX_DATA_DIR)
+python -m pytest backend/test_groove.py -q    # vinyl mode (POST /api/zones/groove)
 python -m pytest backend/test_prepare_data.py -q
 python -m pytest simulation/test_build_monthly_dataset.py -q
 python backend/test_api.py                    # same API tests without pytest

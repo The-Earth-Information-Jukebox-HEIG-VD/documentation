@@ -27,10 +27,10 @@ git tag v* ──▶ docker-publish.yml ──▶ ghcr.io/.../<repo>:<version>, 
 push main (documentation) ──▶ deploy-pages.yml ──▶ GitHub Pages
 ```
 
-!!! warning "Current state"
-    No `v*` tag exists in any repository and the `fb-docker-support` branches no longer exist, so the
-    `docker-publish.yml` workflows have **never run** and no image is on GHCR. Only the documentation workflow has
-    run (successfully). To run the stack today, build locally (see [Docker](docker.md#quick-start-local-build)).
+!!! info "Current state"
+    Releases are tagged: `v1.0.0` and `v1.1.0` exist in `webapp`, `sonification` and `datasets` (plus `v1.0.1` in
+    `webapp`), so their images are on GHCR, the latest as `1.1.0`. The `fb-docker-support` branches named in the
+    webapp and sonification triggers no longer exist, so in practice only tags publish.
 
 ---
 
@@ -59,7 +59,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4                 # datasets: with lfs: true
+      - uses: actions/checkout@v4                 # datasets: plain checkout, see below
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3              # GITHUB_TOKEN, no extra secret
         with:
@@ -92,7 +92,10 @@ Differences between the three:
 
 - **webapp**: build arg `VITE_API_URL=/api`, GitHub Actions layer cache, branch tag.
 - **sonification**: GitHub Actions layer cache, branch tag; builds without `WITH_VSCO` (SoundFont only, no orchestral samples).
-- **datasets**: tag-only trigger, checks out with `lfs: true`, always tags `latest`, no layer cache.
+- **datasets**: tag-only trigger, always tags `latest`, no layer cache, and two extra steps because `data/` is ~6.3 GB:
+  a **Free disk space** step before the checkout (removes preinstalled SDKs the image never uses, prunes Docker images,
+  drops the swap file: ~25 GB freed) and, after a plain `actions/checkout@v4` (no LFS: the data is plain Git), a
+  **Remove git metadata** step (`rm -rf .git`, a ~1.3 GB pack that `.dockerignore` excludes anyway).
 
 Image names are lowercased by `docker/metadata-action`, which gives the
 `ghcr.io/the-earth-information-jukebox-heig-vd/<repo>` names used in `deployment/docker-compose.yml`.
@@ -105,11 +108,11 @@ Push a semver tag in **each** repository whose image you want to publish:
 
 ```bash
 # in webapp/, sonification/ and datasets/
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.2.0
+git push origin v1.2.0
 ```
 
-Each push produces `:1.0.0`, `:1.0` and `:latest`. Then, on the server, set `WEBAPP_VERSION`, `SONIFICATION_VERSION` and
+Each push produces `:1.2.0`, `:1.2` and `:latest` (the version variables in `.env` take the tag without the `v`, e.g. `1.2.0`). Then, on the server, set `WEBAPP_VERSION`, `SONIFICATION_VERSION` and
 `DATASETS_VERSION` in `deployment/.env` and pull (see [Production](production.md#updating)). Each image has its own
 version, so the webapp, the backend and the data can be released independently.
 

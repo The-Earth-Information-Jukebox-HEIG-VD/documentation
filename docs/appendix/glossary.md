@@ -50,6 +50,13 @@ See [Sonification](#sonification).
 
 ---
 
+## E
+
+### EarthChestra
+The name of the app (webapp title). "Earth Information Jukebox" is the name of the project and of the NASA Space Apps challenge it answers.
+
+---
+
 ## F
 
 ### FastAPI

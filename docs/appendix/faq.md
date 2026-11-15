@@ -8,7 +8,7 @@ Common questions about Earth Information Jukebox.
 
 ### What is Earth Information Jukebox?
 
-Earth Information Jukebox is a project that transforms NASA climate data into music through a process called sonification. Temperature anomalies become musical tones: warmer years sound higher, cooler years lower.
+Earth Information Jukebox is a project that transforms NASA climate data into music through a process called sonification. Temperature anomalies become musical tones: warmer years sound higher, cooler years lower. The app itself is called **EarthChestra**; "Earth Information Jukebox" is the project and NASA Space Apps challenge name.
 
 ### Who is this for?
 
@@ -28,7 +28,7 @@ This project was created for the NASA Space Apps Challenge 2026 hackathon. It us
 ### Why can't I hear anything?
 
 1. **No zone selected**: Play stays disabled until you pick a zone on the globe or in the list view
-2. **No track enabled**: Open "Audio tracks" and enable at least one instrument
+2. **No track enabled**: Press **Sounds** (or **Choose sounds**) and enable at least one instrument in "What do you want to hear?"
 3. **Backend unavailable**: All audio is composed by the sonification backend. If it is not running, the player shows a "backend unavailable" error and there is no sound (no offline fallback)
 4. **Data still loading**: Right after the backend starts, it prepares its datasets for a few minutes; tracks show as preparing until then
 5. **No data for the period**: Each instrument is silent for months its dataset does not cover (e.g. lightning only exists for 2017-2023)
@@ -48,8 +48,9 @@ This project was created for the NASA Space Apps Challenge 2026 hackathon. It us
 | Contrabass | CO2 | 2002-2022 |
 | Violins | Rain | 2000-2026 |
 | Glockenspiel | Snow | 2000-2026 |
-| Xylophone | Lightning | 2017-2023 |
-| Harp | Night lights (one value per year) | 2012-2023 |
+| Trombones | Fires | 2002-2026 |
+| Timpani | Lightning | 2017-2023 |
+| Synth pad | Night lights (one value per year) | 2012-2023 |
 
 The list shown in the app comes from the backend (`GET /api/instruments`).
 
@@ -143,7 +144,7 @@ cp .env.example .env   # make sure VITE_API_URL=/api is set
 ```
 
 !!! note
-    The pre-built GHCR images are not published yet, so a plain `docker compose up` cannot pull them; build the images locally as above.
+    The pre-built GHCR images are published (latest release `1.1.0`): with `docker login ghcr.io`, a plain `docker compose up -d` pulls them instead of building.
 
 See the [Quick Start](../getting-started/quickstart.md) guide.
 
@@ -207,9 +208,8 @@ The data is a snapshot stored in the `datasets` repository; it is not updated li
 | Snow (GPM IMERG) | 2000-06 → 2026-11 | Monthly |
 | CO2 | 2002-09 → 2022-03 | Monthly |
 | Lightning (ISS LIS) | 2017-03 → 2023-07 | Monthly, 55°S-55°N only |
+| Fires (MODIS) | 2002-07 → 2026-11 | Monthly (days of the month with a fire) |
 | Night lights (Earth at Night) | 2012 → 2023 | Yearly |
-
-A wildfire dataset (MODIS, 2002-07 → 2026-11) is in the `datasets` repository but is not sonified yet.
 
 ### Can I use my own data?
 

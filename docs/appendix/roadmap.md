@@ -1,6 +1,6 @@
 # Roadmap
 
-Future plans and features for Earth Information Jukebox.
+Future plans and features for Earth Information Jukebox and its app, EarthChestra.
 
 ---
 
@@ -26,17 +26,27 @@ Future plans and features for Earth Information Jukebox.
 - [x] Docker images and Docker Compose deployment (local build)
 - [x] API documentation
 
+### Completed (v1.1)
+
+- [x] Docker images published to GHCR (`v1.1.0` tags in `webapp`, `sonification`, `datasets`)
+- [x] Wildfire sonification (MODIS fires 2002-2026, Trombones)
+- [x] Interactive data graph of the selected zone (`POST /api/zones/series`, with text summary and table)
+- [x] "Go to a date" picker (year + month)
+- [x] Deployment behind Traefik with HTTPS, on a small server (host-folder data) or behind an existing Traefik
+- [x] The webapp sends the selected zone as a compact `mask` instead of `points` (backend API v2.5)
+- [x] Globe playback as flowing spots drawn on the GPU (instead of 3D cylinders)
+- [x] Vinyl mode backend: `POST /api/zones/groove` (API v2.6, a path in space at one fixed date)
+
 ---
 
 ## Short Term (Next Release)
 
-### Deployment
+### In Progress
 
-- [ ] Publish the Docker images to GHCR (the compose file already references them)
+- [ ] Vinyl experience mode, frontend: one month played across the globe like a record (webapp work in progress, still simulated on `POST /api/zones/zone-data`; to be switched to `POST /api/zones/groove`, which the backend serves since API v2.6)
 
 ### Enhanced Data Sources
 
-- [ ] Sonify the wildfire dataset (MODIS 2002-2026, already in the `datasets` repository)
 - [ ] Data for the engine's dust (Flute) and smoke (French Horns) voices
 - [ ] Real-time data updates
 - [ ] More climate variables (sea level, ice extent)
@@ -76,7 +86,7 @@ Future plans and features for Earth Information Jukebox.
 
 - [x] Synchronized map visualization (the globe draws the zone's data month by month with the music)
 - [x] Timeline with key climate moments
-- [ ] Interactive data chart
+- [x] Interactive data chart (Graph toggle in the player)
 - [ ] Visual representation of current pitch
 
 ### Accessibility

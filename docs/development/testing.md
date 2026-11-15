@@ -49,14 +49,21 @@ The backend is never called in tests: `ChunkPlayer` takes an injectable `fetchCh
 |-----------|--------|
 | `audio/ChunkPlayer.test.ts` | Chaining via `next_time_period`, scheduling at `duration_s`, prefetch, completion on `null` |
 | `services/sonificationApi.test.ts` | Request/response handling, `ApiError` kinds, FastAPI `detail` parsing |
+| `services/volumeData.test.ts` | Dataset listing and reading under `/data/` |
 | `hooks/useInstruments.test.ts` | Track list built from `/api/instruments` |
 | `hooks/useZoneDataFrames.test.ts` | Month-by-month dataset loading |
-| `utils/npy.test.ts`, `zoneCells.test.ts`, `reading.test.ts`, `zoneName.test.ts` | `.npy` parsing, zone grid cells, value formatting, zone names |
+| `hooks/useZoneSeries.test.ts` | Data graph series (`POST /api/zones/series`), cache |
+| `hooks/usePlaybackPosition.test.ts`, `useLocalStorageBoolean.test.ts`, `useCompactOnScroll.test.ts` | Position store, persisted preferences, compact header |
+| `hooks/trackColors.test.ts`, `data/trackColors.test.ts` | Track colours |
+| `utils/npy.test.ts`, `zoneCells.test.ts`, `zoneMask.test.ts`, `reading.test.ts`, `zoneName.test.ts`, `geometry.test.ts`, `motion.test.ts` | `.npy` parsing, zone grid cells, compact `mask`, value formatting, zone names, geometry, reduced motion |
 | `components/player/AudioPlayerEnhanced.test.tsx` | Blocked Play, live regions, axe |
-| `components/panels/TrackSelector.test.tsx` | Track panel (unavailable tracks, badges), axe |
-| `components/visualization/GlobeView.test.tsx`, `ListViewWater.test.tsx` | Globe and list views, axe |
+| `components/player/Timeline.test.tsx`, `DatePicker.test.tsx`, `SeriesChart.test.tsx` | Timeline keys and ticks, date picker, data graph (summary, table) |
+| `components/controls/TrackPanel.test.tsx` | "What do you want to hear?" panel (toggles, disclosure), axe |
+| `components/visualization/GlobeView.test.tsx`, `flowSpots.test.ts`, `ListViewWater.test.tsx` | Globe and list views, playback spots layout, axe |
 | `components/ZoneViewSelector.test.tsx`, `data/zones/zones.test.ts` | Zone selector, zone data |
+| `components/about/AboutPage.test.tsx` | About page |
 | `components/AudioPlayer.test.tsx`, `DataVisualizer.test.tsx` | Legacy components (not mounted in the app) |
+| `components/controls/VinylControls.test.tsx`, `player/VinylPlayerBar.test.tsx`, `visualization/VinylGlobeView.test.tsx`, `hooks/useVinylSonification.test.ts`, `services/vinylApi.test.ts`, `utils/vinylGeometry.test.ts` | Vinyl experience mode (in development, uncommitted) |
 
 ### Unit test example: ChunkPlayer
 
@@ -148,7 +155,8 @@ The backend tests are plain pytest files next to the code (no `tests/` directory
 
 | File | Covers |
 |------|--------|
-| `sonification/backend/test_api.py` | End-to-end API tests with FastAPI's `TestClient` (health, options, datasets, compose, sonify...) |
+| `sonification/backend/test_api.py` | End-to-end API tests with FastAPI's `TestClient` (health, options, datasets, compose, sonify, zone-data, zones/series...) |
+| `sonification/backend/test_groove.py` | Vinyl mode (`POST /api/zones/groove`): needle disc mean, month / year maps, global scale, one point per beat, endpoint and its errors |
 | `sonification/backend/test_prepare_data.py` | Data preparation |
 | `sonification/simulation/test_build_monthly_dataset.py` | Monthly dataset builder |
 
@@ -174,7 +182,7 @@ def test_health():
     assert r.status_code == 200 and r.json()["status"] == "ok"
 ```
 
-The `/api/zones/zone-data` contract the webapp uses (request, `next_time_period`, errors) is documented in `sonification/backend/FRONTEND_API.md`.
+The `/api/zones/zone-data` and `/api/zones/series` contract the webapp uses (request, `next_time_period`, errors) is documented in `sonification/backend/FRONTEND_API.md`.
 
 ---
 
