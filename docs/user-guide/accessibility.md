@@ -106,6 +106,14 @@ There is no separate audio transcript yet (no "Audio Transcript" button, no `T` 
 
 ## Visual Accessibility
 
+### Light and Dark Themes
+
+- The app follows your system's light or dark appearance (`prefers-color-scheme`) and keeps following it while it changes.
+- The **Dark mode** button in the header is a toggle button: screen readers announce it as "Dark mode, toggle button, pressed" or "not pressed". It works with Tab, then Enter or Space. Your choice is saved in the browser and wins over the system setting.
+- The theme is applied before the page is drawn, so there is no flash of the wrong theme on load.
+- Both themes target the same ratios (below). In the light theme, the yellow brand color is only used as a fill behind navy text, never as text on white, and links and the focus ring use the darker ocean blue.
+- The globe area stays dark in both themes: the NASA Earth texture and the data dots were designed for a dark background.
+
 ### Color Contrast
 
 The design targets WCAG AA ratios:
@@ -122,18 +130,36 @@ A **high contrast** theme (black background, white text, 2px borders) and a **co
 - Track availability and "only when present" are shown as text
 - Warm / cool markers (▲ / ▼) are available in color-blind mode
 
+The eight track colors come in **two palettes**, one for dark backgrounds (globe, legend, dark theme) and one for light backgrounds (track panel and data graph in the light theme). Each light color is a darker shade of the same hue, so an instrument keeps its identity across themes. Both palettes were checked with a color-vision simulator (protanopia, deuteranopia) comparing every pair of tracks, not only neighbours, and every color reaches 3:1 against its background:
+
+| Track | Dark background | Light background |
+|-------|-----------------|------------------|
+| Temperature | `#e78615` | `#7f3901` |
+| Rain | `#4070bc` | `#2a53e9` |
+| CO₂ | `#c990fc` | `#8944a0` |
+| Snow | `#52f0fd` | `#1096b5` |
+| Lightning | `#ffe815` | `#998b01` |
+| Night lights | `#38b484` | `#027652` |
+| Fires | `#da154c` | `#d51952` |
+| Sea ice | `#f7f4ee` (ice white) | `#8f75f1` |
+
+!!! note
+    Sea ice on dark backgrounds (`#f7f4ee`, ice white) is the one exception still under review: the validator places it close to snow for people with protanopia. The track name next to each dot and the line's own dash pattern in the graph keep the two apart.
+
+Color is still never the only cue: track names are always written next to their dot or line.
+
 ### Focus Indicators
 
 All focusable elements get a visible focus ring:
 
 ```css
 :focus-visible {
-  outline: 3px solid var(--color-primary); /* #f5d078, the logo's label yellow */
+  outline: 3px solid var(--color-focus); /* #f5d078 yellow on dark, #2e5598 ocean blue on light */
   outline-offset: 2px;
 }
 ```
 
-In high contrast mode the ring is a 4px yellow outline. On touch devices (`pointer: coarse`) buttons and inputs have a 44x44px minimum target size.
+In high contrast mode the ring is a 4px outline: yellow on the dark theme, dark blue (`#0000cc`) on the light theme. On touch devices (`pointer: coarse`) buttons and inputs have a 44x44px minimum target size.
 
 ### Reduced Motion
 
@@ -322,6 +348,8 @@ Work in progress, not a certified conformance claim.
 ## Settings for Accessibility
 
 The app stores accessibility preferences in the browser (`localStorage`) and applies them as CSS classes on the page: **high contrast**, **dyslexia-friendly font**, **color-blind mode** and **reduced motion** (initialised from the system setting).
+
+The **light / dark theme** is the exception: it has its own button in the header (see [Light and Dark Themes](#light-and-dark-themes)). High contrast works on top of either theme.
 
 !!! note
     These options exist in the code and translations, but there is currently **no settings menu** in the interface to change them. Use your operating system's reduced motion setting. Slower playback, volume normalization, focus mode and simplified interface are not implemented.

@@ -23,13 +23,19 @@ Open the deployed instance, or run it locally (see the [Quick Start](../getting-
 
 Use the language selector in the header to switch between English, French and German. The initial language follows your browser.
 
+### Light and Dark Theme
+
+EarthChestra opens in the theme your system uses (light or dark appearance). The **Dark mode** button in the header (sun / moon icon, next to the language selector) switches between the two, and the app remembers your choice in this browser. Until you press it, the app keeps following your system, including when the system switches at sunset.
+
+The globe always sits on a dark "space" background, even in the light theme, so the Earth and its colored dots stay easy to read.
+
 ---
 
 ## Main Interface
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  EarthChestra                     Home  About     [Language]  │
+│  EarthChestra              Home  About  [☾ Dark] [Language]  │
 ├──────────────────────────────────────────────────────────────┤
 │  [Time travel | Vinyl]  [Globe | List]  [Continents | ...]   │
 │  ┌────────────────┐ ┌──────────────────────────────────────┐ │
