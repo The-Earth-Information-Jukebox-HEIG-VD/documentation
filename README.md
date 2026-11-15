@@ -75,6 +75,17 @@ mkdocs serve
 # Visit http://127.0.0.1:8001 (port 8000 is left to the sonification API)
 ```
 
+## AI assistance
+
+This project (EarthChestra and its documentation) was developed with the help of AI assistants, Google Gemini and Anthropic Claude. In this repository they were used for:
+
+- **Research and information gathering:** background on NASA climate datasets, sonification and accessibility.
+- **Data analysis and interpretation:** explaining the datasets and their sound mappings in the documentation.
+- **Coding, debugging and troubleshooting:** the MkDocs configuration of the documentation site.
+- **Writing, editing and translating:** the user guide, developer and deployment pages, including translating content written by the team.
+
+The team checked what the AI suggested and is responsible for the content of this repository. The same applies to every repository listed above; each one's README describes how AI was used there.
+
 ## License
 
 This project is developed for the NASA Space Apps Challenge 2026.
