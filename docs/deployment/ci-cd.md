@@ -121,7 +121,9 @@ version, so the webapp, the backend and the data can be released independently.
 Once the image is pushed, the workflow's `release` job creates the GitHub release for the tag (`gh release create
 --generate-notes`, notes from the commits since the previous tag), so the repository's "Releases" box follows the
 tags. `documentation`, `deployment` and `data_processing` publish no image: their `release.yml` workflow only does
-that step on each `v*` tag. A release that already exists is left as it is.
+that step on each `v*` tag. A release that already exists is left as it is. For a tag pushed without its
+release, run the workflow by hand (Actions, "Run workflow", or `gh workflow run <workflow> -f tag=v1.4.0`): a manual
+run only makes the release and does not rebuild the image.
 
 !!! note
     The `datasets` image contains all of `datasets/data` (~9.1 GB at the moment); expect a long build and push.
