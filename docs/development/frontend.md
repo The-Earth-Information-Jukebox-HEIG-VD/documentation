@@ -300,9 +300,19 @@ The interface is available in English, French and German (`src/i18n/locales/{en,
 - Always include visible focus styles
 - Respect `prefers-reduced-motion`
 
+### Light and dark themes
+
+- `variables.css` defines every color token twice: under `:root, [data-theme="dark"]` (the original dark values) and under `[data-theme="light"]`. Components only use `var(--…)`, so they follow the theme without changes.
+- `ThemeContext` (`src/contexts/ThemeContext.tsx`) stores the preference (`system`, `light` or `dark`) under the `localStorage` key `earth-jukebox-theme`, resolves `system` with `matchMedia('(prefers-color-scheme: dark)')`, and sets `data-theme` on `<html>` and the `theme-color` meta tag. `useTheme()` exposes `{ preference, resolvedTheme, toggle }`.
+- A small inline script in `index.html` sets `data-theme` before the first paint, so the page never flashes the wrong theme.
+- Theme-specific helper tokens: `--color-primary-text` (yellow on dark, dark gold `#7a5500` on light, for the rare yellow-as-text use), `--color-link` / `--color-link-hover` (ocean blue `#2e5598` on light, because yellow fails as text on white) and `--color-focus` (the 3px `:focus-visible` outline: yellow on dark, ocean blue on light). Light text tokens are checked at >= 4.5:1 on every light surface (background `#f6f7fb`, surface `#ffffff`, hover `#eceff5`, active `#dfe4ee`).
+- **Dark island:** the globe stage (`.globe-view`, `.vinyl-view`) and the vinyl record SVG carry `data-theme="dark"`. Because custom properties cascade, everything inside it (tooltips, legend, controls) resolves the dark tokens, even in the light theme. The three.js colors (atmosphere, grooves, caps) cannot read CSS variables and stay as constants.
+- **Data colors** come from `src/data/trackColors.ts`: `trackColor(id, surface)` returns the dark or light palette. Use `resolvedTheme` for page surfaces (track panel, data graph) and always `'dark'` for anything drawn on the globe stage. Validate any palette change with the dataviz validator (`--mode light --surface "#f6f7fb" --pairs all`, and `--mode dark --surface "#1a1f2e"`).
+- `.high-contrast` is scoped as `:root.high-contrast` so it overrides both themes.
+
 ```css
 .button:focus-visible {
-  outline: 3px solid var(--color-primary);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
