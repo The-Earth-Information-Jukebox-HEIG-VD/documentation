@@ -69,6 +69,7 @@ nav:
   - Appendix:
     - Glossary: appendix/glossary.md
     - FAQ: appendix/faq.md
+    - Image sources: appendix/image-sources.md
     - Roadmap: appendix/roadmap.md
 
 plugins:
