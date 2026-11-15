@@ -4,8 +4,8 @@ Deploy EarthChestra (the Earth Information Jukebox project's app) to a server (V
 
 !!! info "Published images"
     The production setup (`docker-compose.yml` + `docker-compose.prod.yml`) pulls images from GHCR. Releases are
-    published: the latest tags are `v1.3.0` in `webapp` and `datasets` and `v1.3.2` in `sonification`, so the images
-    exist as `1.3.0` / `1.3.2` (Git tag without the `v`). To publish a new version see [Releasing images](ci-cd.md#releasing-images); to build
+    published: the latest tag is `v1.4.0` in `webapp`, `sonification` and `datasets`, so the images
+    exist as `1.4.0` (Git tag without the `v`). To publish a new version see [Releasing images](ci-cd.md#releasing-images); to build
     on the server from the sibling repositories instead, use `docker-compose.local.yml`
     (see [Docker](docker.md#quick-start-local-build)).
 
@@ -37,9 +37,9 @@ cp .env.example .env
 Then edit `.env`:
 
 ```bash
-WEBAPP_VERSION=1.3.0                   # pin each release instead of latest (no "v")
-SONIFICATION_VERSION=1.3.2
-DATASETS_VERSION=1.3.0
+WEBAPP_VERSION=1.4.0                   # pin each release instead of latest (no "v")
+SONIFICATION_VERSION=1.4.0
+DATASETS_VERSION=1.4.0
 DOMAIN=example.com                     # webapp on DOMAIN, API on api.DOMAIN
 ACME_EMAIL=admin@example.com           # Let's Encrypt account
 ```
@@ -136,8 +136,8 @@ mv datasets/data ~/jukebox-data && rm -rf datasets
 ```bash
 COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml:docker-compose.hostdata.yml
 JUKEBOX_DATA_PATH=/home/ubuntu/jukebox-data   # absolute path
-WEBAPP_VERSION=1.3.0
-SONIFICATION_VERSION=1.3.2
+WEBAPP_VERSION=1.4.0
+SONIFICATION_VERSION=1.4.0
 DOMAIN=example.com
 ACME_EMAIL=admin@example.com
 ```

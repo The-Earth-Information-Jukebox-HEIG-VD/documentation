@@ -15,7 +15,7 @@ Deploy EarthChestra (the Earth Information Jukebox project's app) using Docker C
 !!! info "Published images"
     `docker-compose.yml` pulls `ghcr.io/the-earth-information-jukebox-heig-vd/{datasets,sonification,webapp}`, each at its own version (`DATASETS_VERSION`, `SONIFICATION_VERSION`, `WEBAPP_VERSION`; default `latest`).
     Images are published by the `v*` tag workflows (see [CI/CD](ci-cd.md#releasing-images)); the latest release is
-    `v1.3.0` in `webapp` and `datasets` and `v1.3.2` in `sonification`, pulled as `1.3.0` / `1.3.2` (the version
+    `v1.4.0` in `webapp`, `sonification` and `datasets`, pulled as `1.4.0` (the version
     variables take the Git tag **without** the `v`).
     The repositories are private, so run `docker login ghcr.io` first. To run from the sibling checkouts instead,
     use the **local build** below.
@@ -239,7 +239,7 @@ docker volume rm jukebox-data
 docker compose up -d          # data-init copies again
 
 # or pre-populate / refresh it by hand (pulls the datasets image, writes the same fingerprint)
-./scripts/init-data.sh        # optional version: ./scripts/init-data.sh 1.3.0 (Git tag without the "v")
+./scripts/init-data.sh        # optional version: ./scripts/init-data.sh 1.4.0 (Git tag without the "v")
 ```
 
 ### Data from a host folder
@@ -299,7 +299,7 @@ docker stats
 
 `denied` from `ghcr.io`: the repositories are private, so run `docker login ghcr.io` with a token that has
 `read:packages`. `manifest unknown`: the version in `.env` was never published; use a released one (for example
-`1.3.0`, without `v`) or `./scripts/run-local.sh`.
+`1.4.0`, without `v`) or `./scripts/run-local.sh`.
 
 ### Container won't start
 
@@ -345,7 +345,7 @@ git -C ../webapp pull && git -C ../sonification pull && git -C ../datasets pull
 ### Registry images
 
 ```bash
-# bump WEBAPP_VERSION / SONIFICATION_VERSION / DATASETS_VERSION in .env (e.g. 1.3.0)
+# bump WEBAPP_VERSION / SONIFICATION_VERSION / DATASETS_VERSION in .env (e.g. 1.4.0)
 docker compose pull
 docker compose up -d          # data-init refreshes jukebox-data if the datasets changed
 ```

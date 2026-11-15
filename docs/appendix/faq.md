@@ -150,7 +150,7 @@ cp .env.example .env   # make sure VITE_API_URL=/api is set
 ```
 
 !!! note
-    The pre-built GHCR images are published (latest releases: webapp and datasets `1.3.0`, sonification `1.3.2`): with `docker login ghcr.io`, a plain `docker compose up -d` pulls them instead of building.
+    The pre-built GHCR images are published (latest releases: `1.4.0` for webapp, sonification and datasets): with `docker login ghcr.io`, a plain `docker compose up -d` pulls them instead of building.
 
 See the [Quick Start](../getting-started/quickstart.md) guide.
 

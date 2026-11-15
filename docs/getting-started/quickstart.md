@@ -40,7 +40,7 @@ Stop it with `./scripts/run-local.sh down`.
     The first start converts the datasets in the background (a few minutes). Music is available once
     `GET /api/health` reports `"preparing_data": false`.
 
-    A plain `docker compose up -d` pulls the pre-built images from GHCR instead (published, latest releases `1.3.0` for webapp and datasets, `1.3.2` for sonification;
+    A plain `docker compose up -d` pulls the pre-built images from GHCR instead (published, latest release `1.4.0` for webapp, sonification and datasets for sonification;
     run `docker login ghcr.io` first, the packages are private); see [Docker Deployment](../deployment/docker.md).
 
 ---

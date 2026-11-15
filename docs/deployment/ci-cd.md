@@ -28,8 +28,9 @@ push main (documentation) ──▶ deploy-pages.yml ──▶ GitHub Pages
 ```
 
 !!! info "Current state"
-    Releases are tagged: the latest are `v1.3.0` in `webapp` and `datasets` and `v1.3.2` in `sonification` (earlier:
-    `v1.0.0`, `v1.1.0`, `v1.2.0` in all three, plus `v1.0.1` in `webapp` and `v1.3.1` in `sonification`), so their
+    Releases are tagged: the latest is `v1.4.0` in `webapp`, `sonification` and `datasets` (earlier:
+    `v1.0.0`, `v1.1.0`, `v1.2.0`, `v1.3.0` in all three, plus `v1.0.1` in `webapp` and `v1.3.1` to `v1.3.3` in `sonification`).
+    `documentation`, `deployment` and `data_processing` are tagged from `v1.0.0`, so their
     images are on GHCR. The `fb-docker-support` branches named in the
     webapp and sonification triggers no longer exist, so in practice only tags publish.
 
@@ -109,11 +110,11 @@ Push a semver tag in **each** repository whose image you want to publish:
 
 ```bash
 # in webapp/, sonification/ and datasets/
-git tag v1.4.0
-git push origin v1.4.0
+git tag v1.5.0
+git push origin v1.5.0
 ```
 
-Each push produces `:1.4.0`, `:1.4` and `:latest` (the version variables in `.env` take the tag without the `v`, e.g. `1.4.0`). Then, on the server, set `WEBAPP_VERSION`, `SONIFICATION_VERSION` and
+Each push produces `:1.5.0`, `:1.5` and `:latest` (the version variables in `.env` take the tag without the `v`, e.g. `1.5.0`). Then, on the server, set `WEBAPP_VERSION`, `SONIFICATION_VERSION` and
 `DATASETS_VERSION` in `deployment/.env` and pull (see [Production](production.md#updating)). Each image has its own
 version, so the webapp, the backend and the data can be released independently.
 
